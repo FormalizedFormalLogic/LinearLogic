@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build project and docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Print lake and lean version
+        run: |
+          lake --version
+          lean --version
+
+      - name: Get Mathlib cache
+        run: lake exe cache get
+
+      - name: Restore project cache
+        id: cache-restore
+        uses: actions/cache/restore@v6
+        with:
+          path: .lake/LinearLogic-x86_64-unknown-linux-gnu.tar.gz
+          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}-${{ github.ref_name }}
+            lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain') }}-${{ hashFiles('lake-manifest.json') }}
+
+      - name: Unpack project cache
+        if: hashFiles('.lake/LinearLogic-x86_64-unknown-linux-gnu.tar.gz') != ''
+        run: lake unpack
+
+      - name: Build project
+        run: lake build LinearLogic
+
+      - name: Build docs
+        run: lake build LinearLogic:docs
+
+      - name: Pack project cache
+        run: lake pack
+
+      - name: Save project cache
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/cache/save@v6
+        with:
+          path: .lake/LinearLogic-x86_64-unknown-linux-gnu.tar.gz
+          key: ${{ steps.cache-restore.outputs.cache-primary-key }}
+
+      - name: Upload lean artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: lean-artifacts
+          path: .lake/build/doc
+          retention-days: 1
+          include-hidden-files: true
+
+  deploy:
+    name: Deploy GitHub Pages
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pandoc/actions/setup@v1
+
+      - name: Download lean artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: lean-artifacts
+          path: pages/docs
+
+      - name: Compile README.md to index.html
+        run: |
+          mkdir -p pages
+          pandoc \
+            README.md \
+            --from markdown \
+            --to html5 \
+            --standalone \
+            --katex \
+            --metadata title="LinearLogic" \
+            --output pages/index.html
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: pages
+
+      - uses: actions/deploy-pages@v5
+        id: deployment
