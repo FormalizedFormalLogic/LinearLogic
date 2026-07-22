@@ -1,0 +1,17 @@
+name = "LinearLogic"
+defaultTargets = ["LinearLogic"]
+
+[leanOptions]
+pp.unicode.fun = true
+weak.linter.flexible = true
+weak.linter.refine = true
+weak.linter.oldObtain = true
+weak.linter.style.multiGoal = true
+
+[[require]]
+name = "Foundation"
+git = "https://github.com/FormalizedFormalLogic/Foundation"
+rev = "master"
+
+[[lean_lib]]
+name = "LinearLogic"
