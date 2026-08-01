@@ -1,6 +1,6 @@
 module
 
-public import Foundation.Vorspiel.List.Perm
+public import LinearLogic.Vorspiel.List.Perm
 public import LinearLogic.LL.FirstOrder.Rew
 
 /-! # One-sided sequent calculus for first-order linear logic -/
@@ -59,8 +59,8 @@ inductive Derivation : Sequent L → Type _ where
   | weakening : Derivation Γ → (φ : Proposition L) → Derivation (？φ :: Γ)
   | dereliction : Derivation (φ :: Γ) → Derivation (？φ :: Γ)
   | contraction : Derivation (？φ :: ？φ :: Γ) → Derivation (？φ :: Γ)
-  | all : Derivation (φ.free :: Γ⁺) → Derivation ((∀⁰ φ) :: Γ)
-  | exs (t) : Derivation (φ/[t] :: Γ) → Derivation ((∃⁰ φ) :: Γ)
+  | all : Derivation (φ.free :: Γ⁺) → Derivation ((∀¹ φ) :: Γ)
+  | exs (t) : Derivation (φ/[t] :: Γ) → Derivation ((∃¹ φ) :: Γ)
 
 abbrev Proposition.Proof (φ : Proposition L) : Type _ := Derivation [φ]
 
@@ -184,13 +184,13 @@ def eta : (φ : Proposition L) → ⊢ᴸ [φ, ∼φ]
   |     φ ⨁ ψ => (((eta φ).plusRight ψ).rotate.with ((eta ψ).plusLeft φ).rotate).rotate
   |        ！φ => (eta φ).rotate.dereliction.rotate.ofCourse (by simp)
   |        ？φ => (eta φ).dereliction.rotate.ofCourse (by simp) |>.rotate
-  |      ∀⁰ φ =>
+  |      ∀¹ φ =>
     have : ⊢ᴸ [(∼φ.shift)/[&0], φ.free] := (eta φ.free).rotate.cast (by simp)
-    have : ⊢ᴸ φ.free :: [∃⁰ ∼φ]⁺ := (this.exs _).rotate.cast (by simp)
+    have : ⊢ᴸ φ.free :: [∃¹ ∼φ]⁺ := (this.exs _).rotate.cast (by simp)
     this.all
-  |      ∃⁰ φ =>
+  |      ∃¹ φ =>
     have : ⊢ᴸ [φ.shift/[&0], ∼φ.free] := (eta φ.free).cast (by simp)
-    have : ⊢ᴸ (∼φ).free :: [∃⁰ φ]⁺ := (this.exs _).rotate.cast (by simp)
+    have : ⊢ᴸ (∼φ).free :: [∃¹ φ]⁺ := (this.exs _).rotate.cast (by simp)
     this.all.rotate
   termination_by φ => φ.complexity
 
@@ -219,10 +219,10 @@ def ofNegative : (ν : Proposition L) → ν.Negative → ⊢ᴸ [∼？ν, ν]
     have : ⊢ᴸ [！(∼ν ⨁ ∼μ), ？μ] := ((identity μ).rotate.plusLeft (∼ν)).rotate.dereliction.rotate.ofCourse (by simp)
     have dμ : ⊢ᴸ [μ, ！(∼ν ⨁ ∼μ)] := (this.rotate.cut ihμ).rotate
     (dν.with dμ).rotate
-  |   ∀⁰ ν, h =>
+  |   ∀¹ ν, h =>
     have ih : ⊢ᴸ [∼？ν.free, ν.free] := ofNegative ν.free (by rcases h; simpa)
-    have : ⊢ᴸ [！(∃⁰ ∼ν.shift), ？ν.free] := (exs &0 <| (identity ν.free).dereliction.rotate.cast (by simp)).ofCourse (by simp)
-    have : ⊢ᴸ (ν).free :: [∼？(∀⁰ ν)]⁺ := (this.rotate.cut ih).rotate.cast (by simp)
+    have : ⊢ᴸ [！(∃¹ ∼ν.shift), ？ν.free] := (exs &0 <| (identity ν.free).dereliction.rotate.cast (by simp)).ofCourse (by simp)
+    have : ⊢ᴸ (ν).free :: [∼？(∀¹ ν)]⁺ := (this.rotate.cut ih).rotate.cast (by simp)
     this.all.rotate
   termination_by ν => ν.complexity
 

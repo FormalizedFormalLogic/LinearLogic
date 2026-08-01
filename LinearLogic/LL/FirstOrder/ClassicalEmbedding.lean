@@ -26,8 +26,8 @@ def forget : Semiformula L ξ n → FirstOrder.Semiformula L ξ n
   | ⊥ | 0 => ⊥
   | φ ⨂ ψ | φ ＆ ψ => φ.forget ⋏ ψ.forget
   | φ ⅋ ψ | φ ⨁ ψ => φ.forget ⋎ ψ.forget
-  | ∀⁰ φ => ∀⁰ φ.forget
-  | ∃⁰ φ => ∃⁰ φ.forget
+  | ∀¹ φ => ∀¹ φ.forget
+  | ∃¹ φ => ∃¹ φ.forget
   | ！φ => φ.forget
   | ？φ => φ.forget
 
@@ -53,9 +53,9 @@ def forget : Semiformula L ξ n → FirstOrder.Semiformula L ξ n
 
 @[simp] lemma forget_plus (φ ψ : Semiformula L ξ n) : (φ ⨁ ψ).forget = φ.forget ⋎ ψ.forget := rfl
 
-@[simp] lemma forget_all (φ : Semiformula L ξ (n + 1)) : (∀⁰ φ).forget = ∀⁰ φ.forget := rfl
+@[simp] lemma forget_all (φ : Semiformula L ξ (n + 1)) : (∀¹ φ).forget = ∀¹ φ.forget := rfl
 
-@[simp] lemma forget_exs (φ : Semiformula L ξ (n + 1)) : (∃⁰ φ).forget = ∃⁰ φ.forget := rfl
+@[simp] lemma forget_exs (φ : Semiformula L ξ (n + 1)) : (∃¹ φ).forget = ∃¹ φ.forget := rfl
 
 @[simp] lemma forget_bang (φ : Semiformula L ξ n) : (！φ).forget = φ.forget := rfl
 
@@ -67,7 +67,7 @@ def forget : Semiformula L ξ n → FirstOrder.Semiformula L ξ n
 @[simp] lemma forget_rew (ω : Rew L ξ₁ n₁ ξ₂ n₂) (φ : Semiformula L ξ₁ n₁) :
     (ω ▹ φ).forget = ω ▹ φ.forget := by
   induction φ using rec' generalizing n₂ <;>
-    simp [*, rew_rel, rew_nrel, FirstOrder.Semiformula.rew_rel, FirstOrder.Semiformula.rew_nrel, Function.comp_def]
+    simp [*, rew_rel, rew_nrel, Function.comp_def]
 
 end Semiformula
 
@@ -155,14 +155,14 @@ def girard {n} : (φ : Semiformula L ξ n) → LinearLogic.Semiformula L ξ n
     |  true, false => ？φ.girard ⅋ ψ.girard
     | false,  true => φ.girard ⅋ ？ψ.girard
     | false, false => φ.girard ⅋ ψ.girard
-  |     ∀⁰ φ =>
+  |     ∀¹ φ =>
     match φ.polarity with
-    |  true => ∀⁰ ？φ.girard
-    | false => ∀⁰ φ.girard
-  |     ∃⁰ φ =>
+    |  true => ∀¹ ？φ.girard
+    | false => ∀¹ φ.girard
+  |     ∃¹ φ =>
     match φ.polarity with
-    |  true => ∃⁰ φ.girard
-    | false => ∃⁰ ！φ.girard
+    |  true => ∃¹ φ.girard
+    | false => ∃¹ ！φ.girard
 
 @[simp] lemma girard_rel (k) (r : L.Rel k) (v : Fin k → Semiterm L ξ n) :
     (rel r v).girard = ！.rel r v := rfl
@@ -192,11 +192,11 @@ def girard {n} : (φ : Semiformula L ξ n) → LinearLogic.Semiformula L ξ n
     |  true, false => simp [girard, hφ, hψ, girard_neg φ, girard_neg ψ]
     | false,  true => simp [girard, hφ, hψ, girard_neg φ, girard_neg ψ]
     | false, false => simp [girard, hφ, hψ, girard_neg φ, girard_neg ψ]
-  |     ∀⁰ φ =>
+  |     ∀¹ φ =>
     match hφ : φ.polarity with
     |  true => simp [girard, hφ, girard_neg φ]
     | false => simp [girard, hφ, girard_neg φ]
-  |     ∃⁰ φ =>
+  |     ∃¹ φ =>
     match hφ : φ.polarity with
     |  true => simp [girard, hφ, girard_neg φ]
     | false => simp [girard, hφ, girard_neg φ]
@@ -220,11 +220,11 @@ def girard {n} : (φ : Semiformula L ξ n) → LinearLogic.Semiformula L ξ n
     |  true, false => by simp [girard, hφ, hψ, girard_rew ω φ, girard_rew ω ψ]
     | false,  true => by simp [girard, hφ, hψ, girard_rew ω φ, girard_rew ω ψ]
     | false, false => by simp [girard, hφ, hψ, girard_rew ω φ, girard_rew ω ψ]
-  |     ∀⁰ φ =>
+  |     ∀¹ φ =>
     match hφ : φ.polarity with
     |  true => by simp [girard, hφ, girard_rew _ φ]
     | false => by simp [girard, hφ, girard_rew _ φ]
-  |     ∃⁰ φ =>
+  |     ∃¹ φ =>
     match hφ : φ.polarity with
     |  true => by simp [girard, hφ, girard_rew _ φ]
     | false => by simp [girard, hφ, girard_rew _ φ]
@@ -269,7 +269,7 @@ lemma girard_negative {φ : Semiformula L ξ n} (h : φ.Negative) : φ.girard.Ne
     · match hφ : φ.polarity with
       |  true => simp [girard, hφ, hψ, girard_negative hψ]
       | false => simp [girard, hφ, hψ, girard_negative hφ, girard_negative hψ]
-  |     ∀⁰ φ =>
+  |     ∀¹ φ =>
     match hφ : φ.polarity with
     |  true => simp [girard, hφ]
     | false => simp [girard, hφ, girard_negative hφ]
@@ -317,11 +317,11 @@ lemma girard_positive {φ : Semiformula L ξ n} (h : φ.Positive) : φ.girard.Po
     |  true, false => by simp [girard, hφ, hψ, forget_girard φ, forget_girard ψ]
     | false,  true => by simp [girard, hφ, hψ, forget_girard φ, forget_girard ψ]
     | false, false => by simp [girard, hφ, hψ, forget_girard φ, forget_girard ψ]
-  |     ∀⁰ φ =>
+  |     ∀¹ φ =>
     match hφ : φ.polarity with
     |  true => by simp [girard, hφ, forget_girard φ]
     | false => by simp [girard, hφ, forget_girard φ]
-  |     ∃⁰ φ =>
+  |     ∃¹ φ =>
     match hφ : φ.polarity with
     |  true => by simp [girard, hφ, forget_girard φ]
     | false => by simp [girard, hφ, forget_girard φ]
@@ -432,7 +432,7 @@ def toLL {Γ : Sequent L} : ⊢ᴸᴷ¹ Γ → ⊢ᴸ Γ‡
     match h : φ.polarity with
     |  true =>
       have d : ⊢ᴸ (？φ†)/[t] :: Γ‡ := d.toLL.cast (by simp [Semiformula.Girard, h])
-      have e : ⊢ᴸ [∼(？φ†)/[t], ？(∃⁰ φ†)] :=
+      have e : ⊢ᴸ [∼(？φ†)/[t], ？(∃¹ φ†)] :=
         (LinearLogic.Derivation.identity (φ†/[t])).exs.dereliction.rotate.ofCourse (by simp)
       (d.cut e).invRotate.cast (by simp [Semiformula.Girard, Semiformula.girard, h])
     | false =>

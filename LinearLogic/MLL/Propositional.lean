@@ -51,7 +51,7 @@ instance : MultiplicativeConnective.DeMorgan Formula where
   |   φ ⨂ ψ => simp [neg_neg φ, neg_neg ψ]
 
 instance : TildeInvolutive Formula where
-  neg_involutive := neg_neg
+  tilde_involutive := neg_neg
 
 lemma lolli_def (φ ψ : Formula) : φ ⊸ ψ = ∼φ ⅋ ψ := rfl
 
