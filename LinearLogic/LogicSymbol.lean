@@ -1,6 +1,7 @@
 module
 
 public import Foundation.Logic.LogicSymbol
+public import LinearLogic.Vorspiel.NotationClass
 
 /-! # Linear connectives -/
 
@@ -45,7 +46,7 @@ instance [Tilde F] : Lolli F where
 
 @[simp] lemma lolli_eq_lolli_iff_eq [Tilde F] [TildeInvolutive F] {φ₁ ψ₁ φ₂ ψ₂ : F} :
     φ₁ ⊸ ψ₁ = φ₂ ⊸ ψ₂ ↔ φ₁ = φ₂ ∧ ψ₁ = ψ₂ := by
-  simp [Lolli.lolli]
+  simp [HLolli.hLolli, Lolli.lolli]
 
 end MultiplicativeConnective
 
