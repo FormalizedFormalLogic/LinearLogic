@@ -8,27 +8,6 @@ public import Foundation.Logic.Entailment
 
 @[expose] public section
 
-namespace LO
-
-class HTilde (α : Type*) (β : outParam Type*) where
-  hTilde : α → β
-
-prefix:75 "∼" => HTilde.hTilde
-
-class HWedge (α : Type*) (β : Type*) (γ : outParam Type*) where
-  hWedge : α → β → γ
-
-infixr:69 " ⋏ " => HWedge.hWedge
-
-class HVee (α : Type*) (β : Type*) (γ : outParam Type*) where
-  hVee : α → β → γ
-
-infixr:68 " ⋎ " => HVee.hVee
-
-attribute [match_pattern] HTilde.hTilde HWedge.hWedge HVee.hVee
-
-end LO
-
 namespace LO.Propositional.LC
 
 mutual
