@@ -4,181 +4,310 @@ public import Foundation.Logic.Entailment
 
 /-!
 # "Constructive" classical logic without neutrals
+
+### References
+- J.-Y. Girard, A new constructive logic: classical logic.
+- O. Laurent, Polarized Proof-Nets: Proof-Nets for LC.
 -/
 
 @[expose] public section
 
 namespace LO.Propositional.LC
 
-mutual
-
-inductive PositiveFormula where
-  |  atom : ℕ → PositiveFormula
-  | andPP : PositiveFormula → PositiveFormula → PositiveFormula
-  | andPN : PositiveFormula → NegativeFormula → PositiveFormula
-  | andNP : NegativeFormula → PositiveFormula → PositiveFormula
-  |  orPP : PositiveFormula → PositiveFormula → PositiveFormula
-
-inductive NegativeFormula where
-  | natom : ℕ → NegativeFormula
-  | andNN : NegativeFormula → NegativeFormula → NegativeFormula
-  |  orPN : PositiveFormula → NegativeFormula → NegativeFormula
-  |  orNP : NegativeFormula → PositiveFormula → NegativeFormula
-  |  orNN : NegativeFormula → NegativeFormula → NegativeFormula
-
-end
-
-instance : HWedge PositiveFormula PositiveFormula PositiveFormula where
-  hWedge := PositiveFormula.andPP
-
-instance : HWedge PositiveFormula NegativeFormula PositiveFormula where
-  hWedge := PositiveFormula.andPN
-
-instance : HWedge NegativeFormula PositiveFormula PositiveFormula where
-  hWedge := PositiveFormula.andNP
-
-instance : HVee PositiveFormula PositiveFormula PositiveFormula where
-  hVee := PositiveFormula.orPP
-
-instance : HWedge NegativeFormula NegativeFormula NegativeFormula where
-  hWedge := NegativeFormula.andNN
-
-instance : HVee PositiveFormula NegativeFormula NegativeFormula where
-  hVee := NegativeFormula.orPN
-
-instance : HVee NegativeFormula PositiveFormula NegativeFormula where
-  hVee := NegativeFormula.orNP
-
-instance : HVee NegativeFormula NegativeFormula NegativeFormula where
-  hVee := NegativeFormula.orNN
+namespace Formula
 
 mutual
 
-def PositiveFormula.complexity : PositiveFormula → ℕ
-  |  .atom _ => 0
-  | (P : PositiveFormula) ⋏ (Q : PositiveFormula) => max P.complexity Q.complexity + 1
-  | (P : PositiveFormula) ⋏ (M : NegativeFormula) => max P.complexity M.complexity + 1
-  | (N : NegativeFormula) ⋏ (Q : PositiveFormula) => max N.complexity Q.complexity + 1
-  | (P : PositiveFormula) ⋎ (Q : PositiveFormula) => max P.complexity Q.complexity + 1
+inductive Positive where
+  |  atom : ℕ → Positive
+  | andPosPos : Positive → Positive → Positive
+  | andPosNeg : Positive → Negative → Positive
+  | andNegPos : Negative → Positive → Positive
+  |  orPosPos : Positive → Positive → Positive
 
-def NegativeFormula.complexity : NegativeFormula → ℕ
-  |  .natom _ => 0
-  | (N : NegativeFormula) ⋏ (M : NegativeFormula) => max N.complexity M.complexity + 1
-  | (P : PositiveFormula) ⋎ (M : NegativeFormula) => max P.complexity M.complexity + 1
-  | (N : NegativeFormula) ⋎ (Q : PositiveFormula) => max N.complexity Q.complexity + 1
-  | (N : NegativeFormula) ⋎ (M : NegativeFormula) => max N.complexity M.complexity + 1
+inductive Negative where
+  | natom : ℕ → Negative
+  | andNegNeg : Negative → Negative → Negative
+  |  orPosNeg : Positive → Negative → Negative
+  |  orNegPos : Negative → Positive → Negative
+  |  orNegNeg : Negative → Negative → Negative
 
 end
 
-section complexity
-
-variable {P Q : PositiveFormula} {N M : NegativeFormula}
-
-@[simp] lemma  complexity_atom (p : ℕ) : (PositiveFormula.atom p).complexity = 0 := rfl
-@[simp] lemma complexity_natom (p : ℕ) : (NegativeFormula.natom p).complexity = 0 := rfl
-@[simp] lemma complexity_andPP : (P ⋏ Q).complexity = max P.complexity Q.complexity + 1 := rfl
-@[simp] lemma complexity_andPN : (P ⋏ M).complexity = max P.complexity M.complexity + 1 := rfl
-@[simp] lemma complexity_andNP : (N ⋏ Q).complexity = max N.complexity Q.complexity + 1 := rfl
-@[simp] lemma  complexity_orPP : (P ⋎ Q).complexity = max P.complexity Q.complexity + 1 := rfl
-@[simp] lemma complexity_andNN : (N ⋏ M).complexity = max N.complexity M.complexity + 1 := rfl
-@[simp] lemma  complexity_orPN : (P ⋎ M).complexity = max P.complexity M.complexity + 1 := rfl
-@[simp] lemma  complexity_orNP : (N ⋎ Q).complexity = max N.complexity Q.complexity + 1 := rfl
-
-end complexity
+instance : HWedge Positive Positive Positive := ⟨.andPosPos⟩
+instance : HWedge Positive Negative Positive := ⟨.andPosNeg⟩
+instance : HWedge Negative Positive Positive := ⟨.andNegPos⟩
+instance :   HVee Positive Positive Positive := ⟨.orPosPos⟩
+instance : HWedge Negative Negative Negative := ⟨.andNegNeg⟩
+instance :   HVee Positive Negative Negative := ⟨.orPosNeg⟩
+instance :   HVee Negative Positive Negative := ⟨.orNegPos⟩
+instance :   HVee Negative Negative Negative := ⟨.orNegNeg⟩
 
 mutual
 
-def PositiveFormula.neg : PositiveFormula → NegativeFormula
-  |  .atom a => NegativeFormula.natom a
-  | (P : PositiveFormula) ⋏ (Q : PositiveFormula) => P.neg ⋎ Q.neg
-  | (P : PositiveFormula) ⋏ (N : NegativeFormula) => P.neg ⋎ N.neg
-  | (N : NegativeFormula) ⋏ (P : PositiveFormula) => N.neg ⋎ P.neg
-  | (P : PositiveFormula) ⋎ (Q : PositiveFormula) => P.neg ⋏ Q.neg
+def Positive.neg : Positive → Negative
+  |  .atom a => Negative.natom a
+  | (P : Positive) ⋏ (Q : Positive) => P.neg ⋎ Q.neg
+  | (P : Positive) ⋏ (N : Negative) => P.neg ⋎ N.neg
+  | (N : Negative) ⋏ (P : Positive) => N.neg ⋎ P.neg
+  | (P : Positive) ⋎ (Q : Positive) => P.neg ⋏ Q.neg
 
-def NegativeFormula.neg : NegativeFormula → PositiveFormula
-  |  .natom a => PositiveFormula.atom a
-  | (N : NegativeFormula) ⋏ (M : NegativeFormula) => N.neg ⋎ M.neg
-  | (P : PositiveFormula) ⋎ (N : NegativeFormula) => P.neg ⋏ N.neg
-  | (N : NegativeFormula) ⋎ (P : PositiveFormula) => N.neg ⋏ P.neg
-  | (N : NegativeFormula) ⋎ (M : NegativeFormula) => N.neg ⋏ M.neg
+def Negative.neg : Negative → Positive
+  |  .natom a => Positive.atom a
+  | (N : Negative) ⋏ (M : Negative) => N.neg ⋎ M.neg
+  | (P : Positive) ⋎ (N : Negative) => P.neg ⋏ N.neg
+  | (N : Negative) ⋎ (P : Positive) => N.neg ⋏ P.neg
+  | (N : Negative) ⋎ (M : Negative) => N.neg ⋏ M.neg
 
 end
 
-instance : HTilde PositiveFormula NegativeFormula := ⟨PositiveFormula.neg⟩
-instance : HTilde NegativeFormula PositiveFormula := ⟨NegativeFormula.neg⟩
+instance : HTilde Positive Negative := ⟨Positive.neg⟩
+instance : HTilde Negative Positive := ⟨Negative.neg⟩
 
 section neg
 
-variable {P Q : PositiveFormula} {N M : NegativeFormula}
+variable {P Q : Positive} {N M : Negative}
 
-@[simp] lemma  neg_atom (p : ℕ) : ∼PositiveFormula.atom p = NegativeFormula.natom p := rfl
-@[simp] lemma neg_natom (p : ℕ) : ∼NegativeFormula.natom p = PositiveFormula.atom p := rfl
-@[simp] lemma neg_andPP : ∼(P ⋏ Q) = ∼P ⋎ ∼Q := rfl
-@[simp] lemma neg_andPN : ∼(P ⋏ M) = ∼P ⋎ ∼M := rfl
-@[simp] lemma neg_andNP : ∼(N ⋏ Q) = ∼N ⋎ ∼Q := rfl
-@[simp] lemma neg_andNN : ∼(N ⋏ M) = ∼N ⋎ ∼M := rfl
-@[simp] lemma  neg_orPP : ∼(P ⋎ Q) = ∼P ⋏ ∼Q := rfl
-@[simp] lemma  neg_orPN : ∼(P ⋎ M) = ∼P ⋏ ∼M := rfl
-@[simp] lemma  neg_orNP : ∼(N ⋎ Q) = ∼N ⋏ ∼Q := rfl
-@[simp] lemma  neg_orNN : ∼(N ⋎ M) = ∼N ⋏ ∼M := rfl
+@[simp] lemma  neg_atom (X : ℕ) : ∼Positive.atom X = Negative.natom X := rfl
+@[simp] lemma neg_natom (X : ℕ) : ∼Negative.natom X = Positive.atom X := rfl
+@[simp] lemma neg_andPosPos : ∼(P ⋏ Q) = ∼P ⋎ ∼Q := rfl
+@[simp] lemma neg_andPosNeg : ∼(P ⋏ M) = ∼P ⋎ ∼M := rfl
+@[simp] lemma neg_andNegPos : ∼(N ⋏ Q) = ∼N ⋎ ∼Q := rfl
+@[simp] lemma neg_andNegNeg : ∼(N ⋏ M) = ∼N ⋎ ∼M := rfl
+@[simp] lemma  neg_orPosPos : ∼(P ⋎ Q) = ∼P ⋏ ∼Q := rfl
+@[simp] lemma  neg_orPosNeg : ∼(P ⋎ M) = ∼P ⋏ ∼M := rfl
+@[simp] lemma  neg_orNegPos : ∼(N ⋎ Q) = ∼N ⋏ ∼Q := rfl
+@[simp] lemma  neg_orNegNeg : ∼(N ⋎ M) = ∼N ⋏ ∼M := rfl
 
 end neg
 
 mutual
 
-@[simp] lemma PositiveFormula.neg_neg (P : PositiveFormula) : ∼∼P = P := by
+@[simp] lemma Positive.neg_neg (P : Positive) : ∼∼P = P := by
   match P with
   |  .atom a => rfl
-  | (P : PositiveFormula) ⋏ (Q : PositiveFormula) => simp [P.neg_neg, Q.neg_neg]
-  | (P : PositiveFormula) ⋏ (M : NegativeFormula) => simp [P.neg_neg, M.neg_neg]
-  | (N : NegativeFormula) ⋏ (Q : PositiveFormula) => simp [N.neg_neg, Q.neg_neg]
-  | (P : PositiveFormula) ⋎ (Q : PositiveFormula) => simp [P.neg_neg, Q.neg_neg]
+  | (P : Positive) ⋏ (Q : Positive) => simp [P.neg_neg, Q.neg_neg]
+  | (P : Positive) ⋏ (M : Negative) => simp [P.neg_neg, M.neg_neg]
+  | (N : Negative) ⋏ (Q : Positive) => simp [N.neg_neg, Q.neg_neg]
+  | (P : Positive) ⋎ (Q : Positive) => simp [P.neg_neg, Q.neg_neg]
 
-@[simp] lemma NegativeFormula.neg_neg (N : NegativeFormula) : ∼∼N = N := by
+@[simp] lemma Negative.neg_neg (N : Negative) : ∼∼N = N := by
   match N with
   |  .natom a => rfl
-  | (N : NegativeFormula) ⋏ (M : NegativeFormula) => simp [N.neg_neg, M.neg_neg]
-  | (P : PositiveFormula) ⋎ (M : NegativeFormula) => simp [P.neg_neg, M.neg_neg]
-  | (N : NegativeFormula) ⋎ (Q : PositiveFormula) => simp [N.neg_neg, Q.neg_neg]
-  | (N : NegativeFormula) ⋎ (M : NegativeFormula) => simp [N.neg_neg, M.neg_neg]
+  | (N : Negative) ⋏ (M : Negative) => simp [N.neg_neg, M.neg_neg]
+  | (P : Positive) ⋎ (M : Negative) => simp [P.neg_neg, M.neg_neg]
+  | (N : Negative) ⋎ (Q : Positive) => simp [N.neg_neg, Q.neg_neg]
+  | (N : Negative) ⋎ (M : Negative) => simp [N.neg_neg, M.neg_neg]
 
 end
 
+mutual
+
+def Positive.complexity : Positive → ℕ
+  |  .atom _ => 0
+  | (P : Positive) ⋏ (Q : Positive) => max P.complexity Q.complexity + 1
+  | (P : Positive) ⋏ (M : Negative) => max P.complexity M.complexity + 1
+  | (N : Negative) ⋏ (Q : Positive) => max N.complexity Q.complexity + 1
+  | (P : Positive) ⋎ (Q : Positive) => max P.complexity Q.complexity + 1
+
+def Negative.complexity : Negative → ℕ
+  |  .natom _ => 0
+  | (N : Negative) ⋏ (M : Negative) => max N.complexity M.complexity + 1
+  | (P : Positive) ⋎ (M : Negative) => max P.complexity M.complexity + 1
+  | (N : Negative) ⋎ (Q : Positive) => max N.complexity Q.complexity + 1
+  | (N : Negative) ⋎ (M : Negative) => max N.complexity M.complexity + 1
+
+end
+
+section complexity
+
+variable {P Q : Positive} {N M : Negative}
+
+@[simp] lemma  complexity_atom (X : ℕ) : (Positive.atom X).complexity = 0 := rfl
+@[simp] lemma complexity_natom (X : ℕ) : (Negative.natom X).complexity = 0 := rfl
+@[simp] lemma complexity_andPosPos : (P ⋏ Q).complexity = max P.complexity Q.complexity + 1 := rfl
+@[simp] lemma complexity_andPosNeg : (P ⋏ M).complexity = max P.complexity M.complexity + 1 := rfl
+@[simp] lemma complexity_andNegPos : (N ⋏ Q).complexity = max N.complexity Q.complexity + 1 := rfl
+@[simp] lemma  complexity_orPosPos : (P ⋎ Q).complexity = max P.complexity Q.complexity + 1 := rfl
+@[simp] lemma complexity_andNegNeg : (N ⋏ M).complexity = max N.complexity M.complexity + 1 := rfl
+@[simp] lemma  complexity_orPosNeg : (P ⋎ M).complexity = max P.complexity M.complexity + 1 := rfl
+@[simp] lemma  complexity_orNegPos : (N ⋎ Q).complexity = max N.complexity Q.complexity + 1 := rfl
+@[simp] lemma  complexity_orNegNeg : (N ⋎ M).complexity = max N.complexity M.complexity + 1 := rfl
+
+mutual
+
+@[simp] lemma Positive.complexity_neg (P : Positive) : (∼P).complexity = P.complexity := by
+  match P with
+  |  .atom a => rfl
+  | (P : Positive) ⋏ (Q : Positive) => simp [P.complexity_neg, Q.complexity_neg]
+  | (P : Positive) ⋏ (M : Negative) => simp [P.complexity_neg, M.complexity_neg]
+  | (N : Negative) ⋏ (Q : Positive) => simp [N.complexity_neg, Q.complexity_neg]
+  | (P : Positive) ⋎ (Q : Positive) => simp [P.complexity_neg, Q.complexity_neg]
+
+@[simp] lemma Negative.complexity_neg (N : Negative) : (∼N).complexity = N.complexity := by
+  match N with
+  |  .natom a => rfl
+  | (N : Negative) ⋏ (M : Negative) => simp [N.complexity_neg, M.complexity_neg]
+  | (P : Positive) ⋎ (M : Negative) => simp [P.complexity_neg, M.complexity_neg]
+  | (N : Negative) ⋎ (Q : Positive) => simp [N.complexity_neg, Q.complexity_neg]
+  | (N : Negative) ⋎ (M : Negative) => simp [N.complexity_neg, M.complexity_neg]
+
+end
+
+end complexity
+
+mutual
+
+def Positive.depth : Positive → ℕ
+  |  .atom _ => 1
+  | (P : Positive) ⋏ (Q : Positive) => max P.depth Q.depth
+  | (P : Positive) ⋏ (M : Negative) => max P.depth M.depth + 1
+  | (N : Negative) ⋏ (Q : Positive) => max N.depth Q.depth + 1
+  | (P : Positive) ⋎ (Q : Positive) => max P.depth Q.depth
+
+def Negative.depth : Negative → ℕ
+  |  .natom _ => 1
+  | (N : Negative) ⋏ (M : Negative) => max N.depth M.depth
+  | (P : Positive) ⋎ (M : Negative) => max P.depth M.depth + 1
+  | (N : Negative) ⋎ (Q : Positive) => max N.depth Q.depth + 1
+  | (N : Negative) ⋎ (M : Negative) => max N.depth M.depth
+
+end
+
+section depth
+
+variable {P Q : Positive} {N M : Negative}
+
+@[simp] lemma  depth_atom (X : ℕ) : (Positive.atom X).depth = 1 := rfl
+@[simp] lemma depth_natom (X : ℕ) : (Negative.natom X).depth = 1 := rfl
+@[simp] lemma depth_andPosPos : (P ⋏ Q).depth = max P.depth Q.depth := rfl
+@[simp] lemma depth_andPosNeg : (P ⋏ M).depth = max P.depth M.depth + 1 := rfl
+@[simp] lemma depth_andNegPos : (N ⋏ Q).depth = max N.depth Q.depth + 1 := rfl
+@[simp] lemma  depth_orPosPos : (P ⋎ Q).depth = max P.depth Q.depth := rfl
+@[simp] lemma depth_andNegNeg : (N ⋏ M).depth = max N.depth M.depth := rfl
+@[simp] lemma  depth_orPosNeg : (P ⋎ M).depth = max P.depth M.depth + 1 := rfl
+@[simp] lemma  depth_orNegPos : (N ⋎ Q).depth = max N.depth Q.depth + 1 := rfl
+@[simp] lemma  depth_orNegNeg : (N ⋎ M).depth = max N.depth M.depth := rfl
+
+mutual
+
+@[simp] lemma Positive.depth_neg (P : Positive) : (∼P).depth = P.depth := by
+  match P with
+  |  .atom _ => rfl
+  | (P : Positive) ⋏ (Q : Positive) => simp [P.depth_neg, Q.depth_neg]
+  | (P : Positive) ⋏ (M : Negative) => simp [P.depth_neg, M.depth_neg]
+  | (N : Negative) ⋏ (Q : Positive) => simp [N.depth_neg, Q.depth_neg]
+  | (P : Positive) ⋎ (Q : Positive) => simp [P.depth_neg, Q.depth_neg]
+
+@[simp] lemma Negative.depth_neg (N : Negative) : (∼N).depth = N.depth := by
+  match N with
+  |  .natom _ => rfl
+  | (N : Negative) ⋏ (M : Negative) => simp [N.depth_neg, M.depth_neg]
+  | (P : Positive) ⋎ (M : Negative) => simp [P.depth_neg, M.depth_neg]
+  | (N : Negative) ⋎ (Q : Positive) => simp [N.depth_neg, Q.depth_neg]
+  | (N : Negative) ⋎ (M : Negative) => simp [N.depth_neg, M.depth_neg]
+
+end
+
+end depth
+
+end Formula
+
+inductive Formula where
+  | pos : Formula.Positive → Formula
+  | neg : Formula.Negative → Formula
+
+namespace Formula
+
+instance : Coe Positive Formula := ⟨Formula.pos⟩
+
+instance : Coe Negative Formula := ⟨Formula.neg⟩
+
+inductive IsPrenegative : Formula → Prop where
+  | natom (X : ℕ) : IsPrenegative (Negative.natom X)
+  | pos (P : Positive) : IsPrenegative P
+
+abbrev IsPrenegativeList (Γ : List Formula) : Prop := ∀ A ∈ Γ, IsPrenegative A
+
+end Formula
+
+open Formula
+
 structure Sequent where
-  body : List (NegativeFormula ⊕ PositiveFormula)
-  stoup : Option PositiveFormula
+  body : List Formula
+  stoup : Option Positive
 
 scoped infixl:55 " ;; " => Sequent.mk
 
 inductive Derivation : Sequent → Type _
   /-- axiom -/
-  | ax (p : ℕ) : Derivation ([.inl (.natom p)];; some (.atom p))
-  /-- cut rule -/
-  | cut : Derivation (Γ ;; some P) → Derivation ((.inl (∼P) :: Δ) ;; Ξ) → Derivation (Γ ++ Δ ;; Ξ)
+  | ax (X : ℕ) : Derivation ([Negative.natom X] ;; some (.atom X))
+  /-- cut rules -/
+  | cutPos {P : Positive} :
+    Derivation (Γ ;; some P) → Derivation (((∼P : Negative) :: Δ) ;; Ξ) → Derivation (Γ ++ Δ ;; Ξ)
+  | cutNeg {N : Negative} :
+    Derivation (N :: Γ ;; none) → Derivation ((∼N : Positive) :: Δ ;; Ξ) → Derivation (Γ ++ Δ ;; Ξ)
   /-- structural rules -/
   | exchange : Derivation (Γ ;; Ξ) → Γ.Perm Δ → Derivation (Δ ;; Ξ)
   | weakening : Derivation (Γ ;; Ξ) → Derivation (A :: Γ ;; Ξ)
   | contraction : Derivation (A :: A :: Γ ;; Ξ) → Derivation (A :: Γ ;; Ξ)
-  | dereliction : Derivation (Γ ;; some P) → Derivation (.inr P :: Γ ;; none)
+  | dereliction : Derivation (Γ ;; some P) → Derivation (P :: Γ ;; none)
   /-- logical rules -/
-  | and_pos_pos :
-    Derivation (Δ ;; some P) → Derivation (Γ ;; some Q) → Derivation (Δ ++ Γ ;; some (P ⋏ Q))
-  | and_pos_neg {P : PositiveFormula} {M : NegativeFormula} :
-    Derivation (Δ ;; some P) → Derivation (.inl M :: Γ ;; none) → Derivation (Δ ++ Γ ;; some (P ⋏ M))
-  | and_neg_pos {N : NegativeFormula} :
-    Derivation (.inl N :: Δ ;; none) → Derivation (Γ ;; some Q) → Derivation (Δ ++ Γ ;; some (N ⋏ Q))
-  | and_neg_neg :
-    Derivation (.inl N :: Δ ;; Ξ) → Derivation (.inl M :: Γ ;; Ξ) → Derivation (.inl (N ⋏ M) :: (Δ ++ Γ) ;; Ξ)
-  | or_pos_pos_left (P Q : PositiveFormula) :
+  | andPosPos :
+    Derivation (Γ ;; some P) → Derivation (Δ ;; some Q) → Derivation (Γ ++ Δ ;; some (P ⋏ Q))
+  | andPosNeg {P : Positive} {M : Negative} :
+    Derivation (Γ ;; some P) → Derivation (M :: Δ ;; none) → Derivation (Γ ++ Δ ;; some (P ⋏ M))
+  | andNegPos {N : Negative} :
+    Derivation (.neg N :: Γ ;; none) → Derivation (Δ ;; some Q) → Derivation (Γ ++ Δ ;; some (N ⋏ Q))
+  | andNegNeg {N M : Negative} :
+    Derivation (N :: Γ ;; Ξ) → Derivation (M :: Γ ;; Ξ) → Derivation (N ⋏ M :: Γ ;; Ξ)
+  | orPosPosLeft {P Q : Positive} :
     Derivation (Γ ;; some P) → Derivation (Γ ;; some (P ⋎ Q))
-  | or_pos_pos_right (P Q : PositiveFormula) :
+  | orPosPosRight {P Q : Positive} :
     Derivation (Γ ;; some Q) → Derivation (Γ ;; some (P ⋎ Q))
-  | or_pos_neg_left (P : PositiveFormula) (M : NegativeFormula) :
-    Derivation (.inr P :: .inl M :: Γ ;; Ξ) → Derivation (.inl (P ⋎ M) :: Γ ;; Ξ)
-  | or_pos_neg_right (N : NegativeFormula) (Q : PositiveFormula) :
-    Derivation (.inl N :: .inr Q :: Γ ;; Ξ) → Derivation (.inl (N ⋎ Q) :: Γ ;; Ξ)
-  | or_neg_neg {N M : NegativeFormula} :
-    Derivation (.inl N :: .inl M :: Γ ;; Ξ) → Derivation (.inl (N ⋎ M) :: Γ ;; Ξ)
+  | orPosNeg {P : Positive} {M : Negative} :
+    Derivation (P :: M :: Γ ;; Ξ) → Derivation (P ⋎ M :: Γ ;; Ξ)
+  | orNegPos {N : Negative} {Q : Positive} :
+    Derivation (N :: Q :: Γ ;; Ξ) → Derivation (N ⋎ Q :: Γ ;; Ξ)
+  | orNegNeg {N M : Negative} :
+    Derivation (N :: M :: Γ ;; Ξ) → Derivation (N ⋎ M :: Γ ;; Ξ)
+
+prefix:45 "⊢ᴸᶜ " => Derivation
+
+inductive DerivationRev : Sequent → Type _
+  /-- axiom -/
+  | ax (X : ℕ) : DerivationRev ([Negative.natom X] ;; some (.atom X))
+  /-- cut rules -/
+  | cutPos {P : Positive} :
+    DerivationRev (Γ ;; some P) → DerivationRev (((∼P : Negative) :: Δ) ;; Ξ) → DerivationRev (Γ ++ Δ ;; Ξ)
+  | cutNeg {N : Negative} (hΔ : IsPrenegativeList Δ) :
+    DerivationRev (N :: Γ ;; none) → DerivationRev ((∼N : Positive) :: Δ ;; Ξ) → DerivationRev (Γ ++ Δ ;; Ξ)
+  /-- structural rules -/
+  | exchange : DerivationRev (Γ ;; Ξ) → Γ.Perm Δ → DerivationRev (Δ ;; Ξ)
+  | weakening (hA : IsPrenegative A) : DerivationRev (Γ ;; Ξ) → DerivationRev (A :: Γ ;; Ξ)
+  | contraction (hA : IsPrenegative A) : DerivationRev (A :: A :: Γ ;; Ξ) → DerivationRev (A :: Γ ;; Ξ)
+  | dereliction : DerivationRev (Γ ;; some P) → DerivationRev (P :: Γ ;; none)
+  /-- logical rules -/
+  | andPosPos :
+    DerivationRev (Γ ;; some P) → DerivationRev (Δ ;; some Q) → DerivationRev (Γ ++ Δ ;; some (P ⋏ Q))
+  | andPosNeg {P : Positive} {M : Negative} (hΔ : IsPrenegativeList Δ) :
+    DerivationRev (Γ ;; some P) → DerivationRev (M :: Δ ;; none) → DerivationRev (Γ ++ Δ ;; some (P ⋏ M))
+  | andNegPos {N : Negative} (hΓ : IsPrenegativeList Γ) :
+    DerivationRev (N :: Γ ;; none) → DerivationRev (Δ ;; some Q) → DerivationRev (Γ ++ Δ ;; some (N ⋏ Q))
+  | andNegNeg {N M : Negative} :
+    DerivationRev (N :: Γ ;; Ξ) → DerivationRev (M :: Γ ;; Ξ) → DerivationRev (N ⋏ M :: Γ ;; Ξ)
+  | orPosPosLeft {P Q : Positive} :
+    DerivationRev (Γ ;; some P) → DerivationRev (Γ ;; some (P ⋎ Q))
+  | orPosPosRight {P Q : Positive} :
+    DerivationRev (Γ ;; some Q) → DerivationRev (Γ ;; some (P ⋎ Q))
+  | orPosNeg {P : Positive} {M : Negative} :
+    DerivationRev (P :: M :: Γ ;; Ξ) → DerivationRev (P ⋎ M :: Γ ;; Ξ)
+  | orNegPos {N : Negative} {Q : Positive} :
+    DerivationRev (N :: Q :: Γ ;; Ξ) → DerivationRev (N ⋎ Q :: Γ ;; Ξ)
+  | orNegNeg {N M : Negative} :
+    DerivationRev (N :: M :: Γ ;; Ξ) → DerivationRev (N ⋎ M :: Γ ;; Ξ)
+
+prefix:45 "⊢ᴸᶜᵣ " => DerivationRev
 
 end LO.Propositional.LC
 
