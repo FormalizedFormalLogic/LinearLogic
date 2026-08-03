@@ -1,5 +1,6 @@
 module  -- shake: keep-all --deprecated_module: ignore
 
+public import LinearLogic.LC.Propositional
 public import LinearLogic.LL.FirstOrder.Calculus
 public import LinearLogic.LL.FirstOrder.ClassicalEmbedding
 public import LinearLogic.LL.FirstOrder.Formula
