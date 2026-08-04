@@ -9,7 +9,7 @@ public import LinearLogic.LogicSymbol
 
 @[expose] public section
 
-namespace LO.Propositional.LinearLogic.Multiplicative
+namespace LO.Propositional.MultiplicativeLinearLogic
 
 inductive Formula where
   | atom : ℕ → Formula
@@ -28,32 +28,32 @@ instance : MultiplicativeConnective Formula where
 variable {α : Type*}
 
 def neg : Formula → Formula
-  |  atom a => natom a
-  | natom a => atom a
-  |   φ ⨂ ψ => neg φ ⅋ neg ψ
-  |   φ ⅋ ψ => neg φ ⨂ neg ψ
+  |  atom X => natom X
+  | natom X => atom X
+  |   A ⨂ B => neg A ⅋ neg B
+  |   A ⅋ B => neg A ⨂ neg B
 
 instance : Tilde Formula := ⟨neg⟩
 
-@[simp] lemma neg_atom (p : ℕ) : ∼atom p = natom p := rfl
+@[simp] lemma neg_atom (X : ℕ) : ∼atom X = natom X := rfl
 
-@[simp] lemma neg_natom (p : ℕ) : ∼natom p = atom p := rfl
+@[simp] lemma neg_natom (X : ℕ) : ∼natom X = atom X := rfl
 
 instance : MultiplicativeConnective.DeMorgan Formula where
   tensor _ _ := rfl
   par _ _ := rfl
 
-@[simp] lemma neg_neg (φ : Formula) : ∼∼φ = φ := by
-  match φ with
-  |  atom a => rfl
-  | natom a => rfl
-  |   φ ⅋ ψ => simp [neg_neg φ, neg_neg ψ]
-  |   φ ⨂ ψ => simp [neg_neg φ, neg_neg ψ]
+@[simp] lemma neg_neg (A : Formula) : ∼∼A = A := by
+  match A with
+  |  atom X => rfl
+  | natom X => rfl
+  |   A ⨂ B => simp [neg_neg A, neg_neg B]
+  |   A ⅋ B => simp [neg_neg A, neg_neg B]
 
 instance : TildeInvolutive Formula where
   tilde_involutive := neg_neg
 
-lemma lolli_def (φ ψ : Formula) : φ ⊸ ψ = ∼φ ⅋ ψ := rfl
+lemma lolli_def (A B : Formula) : A ⊸ B = ∼A ⅋ B := rfl
 
 end Formula
 
@@ -62,18 +62,22 @@ variable {α : Type*}
 abbrev Sequent := List Formula
 
 inductive Derivation : Sequent → Type _
-  | protected id (p : ℕ) : Derivation [.atom p, .natom p]
-  | cut : Derivation (φ :: Γ) → Derivation (∼φ :: Δ) → Derivation (Γ ++ Δ)
+  /-- axiom -/
+  | ax (X : ℕ) : Derivation [.atom X, .natom X]
+  /-- cut rule -/
+  | cut : Derivation (A :: Γ) → Derivation (∼A :: Δ) → Derivation (Γ ++ Δ)
+  /-- structural rule -/
   | exchange : Derivation Γ → Γ.Perm Δ → Derivation Δ
-  | tensor : Derivation (φ :: Γ) → Derivation (ψ :: Δ) → Derivation (φ ⨂ ψ :: (Γ ++ Δ))
-  | par : Derivation (φ :: ψ :: Γ) → Derivation (φ ⅋ ψ :: Γ)
+  /-- multiplicative rules -/
+  | tensor : Derivation (A :: Γ) → Derivation (B :: Δ) → Derivation (A ⨂ B :: (Γ ++ Δ))
+  | par : Derivation (A :: B :: Γ) → Derivation (A ⅋ B :: Γ)
 
-abbrev Proof (φ : Formula) : Type _ := Derivation [φ]
+abbrev Proof (A : Formula) : Type _ := Derivation [A]
 
 inductive Symbol where
   | mll
 
-notation "𝐌𝐋𝐋" => Symbol.mll
+notation "𝐌𝐋𝐋⁰" => Symbol.mll
 
 instance : Entailment Symbol Formula := ⟨fun _ ↦ Proof⟩
 
@@ -87,14 +91,14 @@ namespace Derivation
 
 def cast (d : ⊢! Γ) (e : Γ = Δ) : ⊢! Δ := e ▸ d
 
-def rotate (d : ⊢! φ :: Γ) : ⊢! Γ ++ [φ] :=
+def rotate (d : ⊢! A :: Γ) : ⊢! Γ ++ [A] :=
   d.exchange (by grind only [List.perm_comm, List.perm_append_singleton])
 
-def identity : (φ : Formula) → ⊢! [φ, ∼φ]
-  |  .atom a => .id a
-  | .natom a => (Derivation.id a).rotate
-  |    φ ⨂ ψ => ((identity φ).tensor (identity ψ)).rotate.par.rotate
-  |    φ ⅋ ψ => ((identity φ).rotate.tensor (identity ψ).rotate).rotate.par
+def eta : (A : Formula) → ⊢! [A, ∼A]
+  |  .atom X => ax X
+  | .natom X => (ax X).rotate
+  |    A ⨂ B => ((eta A).tensor (eta B)).rotate.par.rotate
+  |    A ⅋ B => ((eta A).rotate.tensor (eta B).rotate).rotate.par
 
 end Derivation
 
@@ -102,17 +106,17 @@ namespace Proof
 
 open Derivation
 
-def identity' : 𝐌𝐋𝐋 ⊢! φ ⊸ φ := (identity φ).rotate.par
+def eta' : 𝐌𝐋𝐋⁰ ⊢! A ⊸ A := (eta A).rotate.par
 
-def modusPonens (d₁ : 𝐌𝐋𝐋 ⊢! φ ⊸ ψ) (d₂ : 𝐌𝐋𝐋 ⊢! φ) : 𝐌𝐋𝐋 ⊢! ψ :=
-  have d₁ : ⊢! [∼(φ ⨂ ∼ψ)] := d₁.cast <| by simp [Formula.lolli_def]
-  have b : ⊢! [φ ⨂ ∼ψ, ∼φ, ψ] := (identity φ).tensor (identity ψ).rotate
+def modusPonens (d₁ : 𝐌𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐌𝐋𝐋⁰ ⊢! A) : 𝐌𝐋𝐋⁰ ⊢! B :=
+  have d₁ : ⊢! [∼(A ⨂ ∼B)] := d₁.cast <| by simp [Formula.lolli_def]
+  have b : ⊢! [A ⨂ ∼B, ∼A, B] := (eta A).tensor (eta B).rotate
   cut d₂ (cut b d₁)
 
 end Proof
 
-example : 𝐌𝐋𝐋 ⊢ φ ⅋ ∼φ := ⟨Derivation.par (Derivation.identity _)⟩
+example : 𝐌𝐋𝐋⁰ ⊢ A ⅋ ∼A := ⟨Derivation.par (Derivation.eta _)⟩
 
-end LO.Propositional.LinearLogic.Multiplicative
+end LO.Propositional.MultiplicativeLinearLogic
 
 end

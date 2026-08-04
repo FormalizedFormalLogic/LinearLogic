@@ -4,18 +4,20 @@ public import Foundation.Logic.Entailment
 public import LinearLogic.LogicSymbol
 
 /-!
-# Multiplicative exponential linear logic without neutrals
+# Propositional linear logic without neutrals
 -/
 
 @[expose] public section
 
-namespace LO.Propositional.LinearLogic.MultiplicativeExponential
+namespace LO.Propositional.LinearLogic
 
 inductive Formula where
   | atom : ℕ → Formula
   | natom : ℕ → Formula
   | tensor : Formula → Formula → Formula
   | par : Formula → Formula → Formula
+  | plus : Formula → Formula → Formula
+  | with : Formula → Formula → Formula
   | bang : Formula → Formula
   | quest : Formula → Formula
 
@@ -26,6 +28,12 @@ instance : MultiplicativeConnective Formula where
   par := par
   tensor_injective _ _ _ _ := by simp [tensor.injEq]
   par_injective _ _ _ _ := by simp [par.injEq]
+
+instance : AdditiveConnective Formula where
+  plus := plus
+  with' := .with
+  plus_injective _ _ _ _ := by simp [plus.injEq]
+  with_injective _ _ _ _ := by simp [with.injEq]
 
 instance : ExponentialConnective Formula where
   bang := bang
@@ -38,8 +46,10 @@ variable {α : Type*}
 def neg : Formula → Formula
   |  atom X => natom X
   | natom X => atom X
-  |   A ⨂ B => neg A ⅋ neg B
-  |   A ⅋ B => neg A ⨂ neg B
+  |   A ⨂ B => A.neg ⅋ B.neg
+  |   A ⅋ B => A.neg ⨂ B.neg
+  |   A ⨁ B => A.neg ＆ B.neg
+  |  A ＆ B => A.neg ⨁ B.neg
   |     ！A => ？A.neg
   |     ？A => ！A.neg
 
@@ -53,6 +63,10 @@ instance : MultiplicativeConnective.DeMorgan Formula where
   tensor _ _ := rfl
   par _ _ := rfl
 
+instance : AdditiveConnective.DeMorgan Formula where
+  plus _ _ := rfl
+  with_ _ _ := rfl
+
 instance : ExponentialConnective.DeMorgan Formula where
   bang _ := rfl
   quest _ := rfl
@@ -61,8 +75,10 @@ instance : ExponentialConnective.DeMorgan Formula where
   match A with
   |  atom X => rfl
   | natom X => rfl
-  |   A ⅋ B => simp [neg_neg A, neg_neg B]
   |   A ⨂ B => simp [neg_neg A, neg_neg B]
+  |   A ⅋ B => simp [neg_neg A, neg_neg B]
+  |   A ⨁ B => simp [neg_neg A, neg_neg B]
+  |  A ＆ B => simp [neg_neg A, neg_neg B]
   |     ！A => simp [neg_neg A]
   |     ？A => simp [neg_neg A]
 
@@ -78,6 +94,8 @@ inductive IsQuest : Formula → Prop
 @[simp] lemma IsQuest.not_natom (p : ℕ) : ¬IsQuest (natom p) := by intro h; cases h
 @[simp] lemma IsQuest.not_tensor (A B : Formula) : ¬IsQuest (A ⨂ B) := by intro h; cases h
 @[simp] lemma IsQuest.not_par (A B : Formula) : ¬IsQuest (A ⅋ B) := by intro h; cases h
+@[simp] lemma IsQuest.not_plus (A B : Formula) : ¬IsQuest (A ⨁ B) := by intro h; cases h
+@[simp] lemma IsQuest.not_with (A B : Formula) : ¬IsQuest (A ＆ B) := by intro h; cases h
 @[simp] lemma IsQuest.not_bang (A : Formula) : ¬IsQuest (！A) := by intro h; cases h
 @[simp] lemma IsQuest.quest (A : Formula) : IsQuest (？A) := by constructor
 
@@ -99,8 +117,15 @@ def IsQuest (Γ : Sequent) : Prop := ∀ A ∈ Γ, Formula.IsQuest A
 
 end Sequent
 
+inductive LL where
+  | ll
+
+notation "𝐋𝐋⁰" => LL.ll
+
+namespace LL
+
 inductive Derivation : Sequent → Type _
-  /-- axiom -/
+  /-- axiom  -/
   | ax (p : ℕ) : Derivation [.atom p, .natom p]
   /-- cut rule -/
   | cut : Derivation (A :: Γ) → Derivation (∼A :: Δ) → Derivation (Γ ++ Δ)
@@ -111,18 +136,18 @@ inductive Derivation : Sequent → Type _
   /-- multiplicative rules -/
   | tensor : Derivation (A :: Γ) → Derivation (B :: Δ) → Derivation (A ⨂ B :: (Γ ++ Δ))
   | par : Derivation (A :: B :: Γ) → Derivation (A ⅋ B :: Γ)
+  /-- additive rules -/
+  | plusLeft : Derivation (A :: Γ) → Derivation (A ⨁ B :: Γ)
+  | plusRight : Derivation (B :: Γ) → Derivation (A ⨁ B :: Γ)
+  | with : Derivation (A :: Γ) → Derivation (B :: Γ) → Derivation (A ＆ B :: Γ)
   /-- exponential rules -/
   | dereliction : Derivation (A :: Γ) → Derivation (？A :: Γ)
   | bang : Derivation (A :: Γ) → Sequent.IsQuest Γ → Derivation (！A :: Γ)
 
+
 abbrev Proof (A : Formula) : Type _ := Derivation [A]
 
-inductive Symbol where
-  | mell
-
-notation "𝐌𝐄𝐋𝐋" => Symbol.mell
-
-instance : Entailment Symbol Formula := ⟨fun _ ↦ Proof⟩
+instance : Entailment LL Formula := ⟨fun _ ↦ Proof⟩
 
 scoped prefix:45 "⊢! " => Derivation
 
@@ -138,10 +163,12 @@ def rotate (d : ⊢! A :: Γ) : ⊢! Γ ++ [A] :=
   d.exchange (by grind only [List.perm_comm, List.perm_append_singleton])
 
 def eta : (A : Formula) → ⊢! [A, ∼A]
-  |  .atom X => ax X
+  |  .atom X => .ax X
   | .natom X => (ax X).rotate
   |    A ⨂ B => ((eta A).tensor (eta B)).rotate.par.rotate
   |    A ⅋ B => ((eta A).rotate.tensor (eta B).rotate).rotate.par
+  |    A ⨁ B => ((eta A).plusLeft.rotate.with (eta B).plusRight.rotate).rotate
+  |   A ＆ B => (eta A).rotate.plusLeft.rotate.with (eta B).rotate.plusRight.rotate
   |      ！A => (eta A).rotate.dereliction.rotate.bang (by simp)
   |      ？A => (eta A).dereliction.rotate.bang (by simp) |>.rotate
 
@@ -151,15 +178,15 @@ namespace Proof
 
 open Derivation
 
-def identity' : 𝐌𝐄𝐋𝐋 ⊢! A ⊸ A := (eta A).rotate.par
+def ax' : 𝐋𝐋⁰ ⊢! A ⊸ A := (eta A).rotate.par
 
-def modusPonens (d₁ : 𝐌𝐄𝐋𝐋 ⊢! A ⊸ B) (d₂ : 𝐌𝐄𝐋𝐋 ⊢! A) : 𝐌𝐄𝐋𝐋 ⊢! B :=
+def modusPonens (d₁ : 𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐋𝐋⁰ ⊢! A) : 𝐋𝐋⁰ ⊢! B :=
   have d₁ : ⊢! [∼(A ⨂ ∼B)] := d₁.cast <| by simp [Formula.lolli_def]
   have b : ⊢! [A ⨂ ∼B, ∼A, B] := (eta A).tensor (eta B).rotate
   cut d₂ (cut b d₁)
 
 end Proof
 
-end LO.Propositional.LinearLogic.MultiplicativeExponential
+end LO.Propositional.LinearLogic.LL
 
 end
