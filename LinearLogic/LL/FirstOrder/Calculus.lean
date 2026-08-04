@@ -13,9 +13,9 @@ variable {L : Language}
 
 abbrev Sequent (L : Language) := List (Proposition L)
 
-def Sequent.IsQuest (Γ : Sequent L) : Prop := ∀ φ ∈ Γ, φ.IsQuest
+def Sequent.IsQuest (Γ : Sequent L) : Prop := ∀ A ∈ Γ, A.IsQuest
 
-def Sequent.Negative (Γ : Sequent L) : Prop := ∀ φ ∈ Γ, φ.Negative
+def Sequent.Negative (Γ : Sequent L) : Prop := ∀ A ∈ Γ, A.Negative
 
 namespace Sequent
 
@@ -23,8 +23,8 @@ namespace IsQuest
 
 @[simp] lemma nil : Sequent.IsQuest ([] : Sequent L) := by simp [Sequent.IsQuest]
 
-@[simp] lemma cons (φ : Proposition L) (Γ : Sequent L) :
-    Sequent.IsQuest (φ :: Γ) ↔ φ.IsQuest ∧ Sequent.IsQuest Γ := by simp [Sequent.IsQuest]
+@[simp] lemma cons (A : Proposition L) (Γ : Sequent L) :
+    Sequent.IsQuest (A :: Γ) ↔ A.IsQuest ∧ Sequent.IsQuest Γ := by simp [Sequent.IsQuest]
 
 end IsQuest
 
@@ -32,8 +32,8 @@ namespace Negative
 
 @[simp] lemma nil : Sequent.Negative ([] : Sequent L) := by simp [Sequent.Negative]
 
-@[simp] lemma cons (φ : Proposition L) (Γ : Sequent L) :
-    Sequent.Negative (φ :: Γ) ↔ φ.Negative ∧ Sequent.Negative Γ := by simp [Sequent.Negative]
+@[simp] lemma cons (A : Proposition L) (Γ : Sequent L) :
+    Sequent.Negative (A :: Γ) ↔ A.Negative ∧ Sequent.Negative Γ := by simp [Sequent.Negative]
 
 end Negative
 
@@ -44,41 +44,41 @@ end Sequent
 
 /-- Derivation of first-order linear logic -/
 inductive Derivation : Sequent L → Type _ where
-  | identity (φ) : Derivation [φ, ∼φ]
-  | cut : Derivation (φ :: Γ) → Derivation (∼φ :: Δ) → Derivation (Γ ++ Δ)
+  /-- axiom -/
+  | ax (A) : Derivation [A, ∼A]
+  /-- cut rule -/
+  | cut : Derivation (A :: Γ) → Derivation (∼A :: Δ) → Derivation (Γ ++ Δ)
+  /-- structural rules -/
   | exchange : Derivation Γ → Γ.Perm Δ → Derivation Δ
+  | weakening : Derivation Γ → (A : Proposition L) → Derivation (？A :: Γ)
+  | contraction : Derivation (？A :: ？A :: Γ) → Derivation (？A :: Γ)
+  /-- multiplicative rules -/
   | one : Derivation [1]
   | falsum : Derivation Γ → Derivation (⊥ :: Γ)
-  | tensor : Derivation (φ :: Γ) → Derivation (ψ :: Δ) → Derivation (φ ⨂ ψ :: (Γ ++ Δ))
-  | par : Derivation (φ :: ψ :: Γ) → Derivation (φ ⅋ ψ :: Γ)
+  | tensor : Derivation (A :: Γ) → Derivation (B :: Δ) → Derivation (A ⨂ B :: (Γ ++ Δ))
+  | par : Derivation (A :: B :: Γ) → Derivation (A ⅋ B :: Γ)
+  /-- additive rules -/
   | verum (Γ) : Derivation (⊤ :: Γ)
-  | with : Derivation (φ :: Γ) → Derivation (ψ :: Γ) → Derivation (φ ＆ ψ :: Γ)
-  | plusLeft : Derivation (ψ :: Γ) → (φ : Proposition L) → Derivation (φ ⨁ ψ :: Γ)
-  | plusRight : Derivation (φ :: Γ) → (ψ : Proposition L) → Derivation (φ ⨁ ψ :: Γ)
-  | ofCourse : Derivation (φ :: Γ) → Sequent.IsQuest Γ → Derivation (！φ :: Γ)
-  | weakening : Derivation Γ → (φ : Proposition L) → Derivation (？φ :: Γ)
-  | dereliction : Derivation (φ :: Γ) → Derivation (？φ :: Γ)
-  | contraction : Derivation (？φ :: ？φ :: Γ) → Derivation (？φ :: Γ)
-  | all : Derivation (φ.free :: Γ⁺) → Derivation ((∀¹ φ) :: Γ)
-  | exs (t) : Derivation (φ/[t] :: Γ) → Derivation ((∃¹ φ) :: Γ)
+  | with : Derivation (A :: Γ) → Derivation (B :: Γ) → Derivation (A ＆ B :: Γ)
+  | plusLeft : Derivation (B :: Γ) → (A : Proposition L) → Derivation (A ⨁ B :: Γ)
+  | plusRight : Derivation (A :: Γ) → (B : Proposition L) → Derivation (A ⨁ B :: Γ)
+  /-- exponential rules -/
+  | ofCourse : Derivation (A :: Γ) → Sequent.IsQuest Γ → Derivation (！A :: Γ)
+  | dereliction : Derivation (A :: Γ) → Derivation (？A :: Γ)
+  /-- quantifier rules -/
+  | all : Derivation (A.free :: Γ⁺) → Derivation ((∀¹ A) :: Γ)
+  | exs (t) : Derivation (A/[t] :: Γ) → Derivation ((∃¹ A) :: Γ)
 
-abbrev Proposition.Proof (φ : Proposition L) : Type _ := Derivation [φ]
+abbrev Proposition.Proof (A : Proposition L) : Type _ := Derivation [A]
 
 abbrev Sentence.Proof (σ : Sentence L) : Type _ := Derivation [(σ : Proposition L)]
 
-inductive SymbolFV (L : Language) where
-  | symbol : SymbolFV L
+inductive LL (L : Language) where
+  | ll : LL L
 
-notation "𝐋𝐋₀" => SymbolFV.symbol
+notation "𝐋𝐋¹" => LL.ll
 
-instance : Entailment (SymbolFV L) (Proposition L) := ⟨fun _ ↦ Proposition.Proof⟩
-
-inductive Symbol (L : Language) where
-  | symbol : Symbol L
-
-notation "𝐋𝐋" => Symbol.symbol
-
-instance : Entailment (Symbol L) (Sentence L) := ⟨fun _ ↦ Sentence.Proof⟩
+instance : Entailment (LL L) (Proposition L) := ⟨fun _ ↦ Proposition.Proof⟩
 
 scoped prefix:45 "⊢ᴸ " => Derivation
 
@@ -88,14 +88,14 @@ variable {Γ Δ : Sequent L}
 
 def cast (d : ⊢ᴸ Γ) (e : Γ = Δ) : ⊢ᴸ Δ := e ▸ d
 
-def rotate (d : ⊢ᴸ φ :: Γ) : ⊢ᴸ Γ ++ [φ] :=
+def rotate (d : ⊢ᴸ A :: Γ) : ⊢ᴸ Γ ++ [A] :=
   d.exchange (by grind only [List.perm_comm, List.perm_append_singleton])
 
-def invRotate (d : ⊢ᴸ Γ ++ [φ]) : ⊢ᴸ φ :: Γ :=
+def invRotate (d : ⊢ᴸ Γ ++ [A]) : ⊢ᴸ A :: Γ :=
   d.exchange (by grind only [List.perm_comm, List.perm_append_singleton])
 
 def height {Γ : Sequent L} : ⊢ᴸ Γ → ℕ
-  |    identity _ => 0
+  |          ax _ => 0
   |     cut d₁ d₂ => max d₁.height d₂.height + 1
   |  exchange d _ => d.height
   |           one => 0
@@ -115,10 +115,10 @@ def height {Γ : Sequent L} : ⊢ᴸ Γ → ℕ
 
 section height
 
-@[simp] lemma height_id (φ : Proposition L) :
-    (identity φ).height = 0 := rfl
+@[simp] lemma height_id (A : Proposition L) :
+    (ax A).height = 0 := rfl
 
-@[simp] lemma height_cut (d₁ : ⊢ᴸ φ :: Γ) (d₂ : ⊢ᴸ ∼φ :: Δ) :
+@[simp] lemma height_cut (d₁ : ⊢ᴸ A :: Γ) (d₂ : ⊢ᴸ ∼A :: Δ) :
     (d₁.cut d₂).height = max d₁.height d₂.height + 1 := rfl
 
 @[simp] lemma height_exchange (d : ⊢ᴸ Γ) (p : Γ.Perm Δ) :
@@ -130,40 +130,40 @@ section height
 @[simp] lemma height_falsum (d : ⊢ᴸ Γ) :
     d.falsum.height = d.height + 1 := rfl
 
-@[simp] lemma height_tensor (d₁ : ⊢ᴸ φ :: Γ) (d₂ : ⊢ᴸ ψ :: Δ) :
+@[simp] lemma height_tensor (d₁ : ⊢ᴸ A :: Γ) (d₂ : ⊢ᴸ B :: Δ) :
     (d₁.tensor d₂).height = max d₁.height d₂.height + 1 := rfl
 
-@[simp] lemma height_par (d : ⊢ᴸ φ :: ψ :: Γ) :
+@[simp] lemma height_par (d : ⊢ᴸ A :: B :: Γ) :
     d.par.height = d.height + 1 := rfl
 
 @[simp] lemma height_verum (Γ : Sequent L) :
     (verum Γ).height = 0 := rfl
 
-@[simp] lemma height_with (d₁ : ⊢ᴸ φ :: Γ) (d₂ : ⊢ᴸ ψ :: Γ) :
+@[simp] lemma height_with (d₁ : ⊢ᴸ A :: Γ) (d₂ : ⊢ᴸ B :: Γ) :
     (d₁.with d₂).height = max d₁.height d₂.height + 1 := rfl
 
-@[simp] lemma height_plusLeft (d : ⊢ᴸ φ :: Γ) (ψ) :
-    (d.plusLeft ψ).height = d.height + 1 := rfl
+@[simp] lemma height_plusLeft (d : ⊢ᴸ A :: Γ) (B) :
+    (d.plusLeft B).height = d.height + 1 := rfl
 
-@[simp] lemma height_plusRight (d : ⊢ᴸ ψ :: Γ) (φ) :
-    (d.plusRight φ).height = d.height + 1 := rfl
+@[simp] lemma height_plusRight (d : ⊢ᴸ B :: Γ) (A) :
+    (d.plusRight A).height = d.height + 1 := rfl
 
-@[simp] lemma height_ofCourse (d : ⊢ᴸ φ :: Γ) (hΓ : Sequent.IsQuest Γ) :
+@[simp] lemma height_ofCourse (d : ⊢ᴸ A :: Γ) (hΓ : Sequent.IsQuest Γ) :
     (d.ofCourse hΓ).height = d.height + 1 := rfl
 
-@[simp] lemma height_weakening (d : ⊢ᴸ Γ) (φ) :
-    (d.weakening φ).height = d.height + 1 := rfl
+@[simp] lemma height_weakening (d : ⊢ᴸ Γ) (A) :
+    (d.weakening A).height = d.height + 1 := rfl
 
-@[simp] lemma height_dereliction (d : ⊢ᴸ φ :: Γ) :
+@[simp] lemma height_dereliction (d : ⊢ᴸ A :: Γ) :
     d.dereliction.height = d.height + 1 := rfl
 
-@[simp] lemma height_contraction (d : ⊢ᴸ ？φ :: ？φ :: Γ) :
+@[simp] lemma height_contraction (d : ⊢ᴸ ？A :: ？A :: Γ) :
     d.contraction.height = d.height + 1 := rfl
 
-@[simp] lemma height_all {φ : Semiproposition L 1} (d : ⊢ᴸ φ.free :: Γ⁺) :
+@[simp] lemma height_all {A : Semiproposition L 1} (d : ⊢ᴸ A.free :: Γ⁺) :
     d.all.height = d.height + 1 := rfl
 
-@[simp] lemma height_exs {φ : Semiproposition L 1} {t} (d : ⊢ᴸ φ/[t] :: Γ) :
+@[simp] lemma height_exs {A : Semiproposition L 1} {t} (d : ⊢ᴸ A/[t] :: Γ) :
     (d.exs t).height = d.height + 1 := rfl
 
 @[simp] lemma height_cast (d : ⊢ᴸ Γ) (e : Γ = Δ) :
@@ -171,57 +171,57 @@ section height
 
 end height
 
-def eta : (φ : Proposition L) → ⊢ᴸ [φ, ∼φ]
-  |  .rel r v => identity _
-  | .nrel r v => identity _
+def eta : (A : Proposition L) → ⊢ᴸ [A, ∼A]
+  |  .rel r v => ax _
+  | .nrel r v => ax _
   |         1 => one.falsum.rotate
   |         ⊥ => one.falsum
-  |     φ ⨂ ψ => ((eta φ).tensor (eta ψ)).rotate.par.rotate
-  |     φ ⅋ ψ => ((eta φ).rotate.tensor (eta ψ).rotate).rotate.par
+  |     A ⨂ B => ((eta A).tensor (eta B)).rotate.par.rotate
+  |     A ⅋ B => ((eta A).rotate.tensor (eta B).rotate).rotate.par
   |         ⊤ => verum _
   |         0 => (verum [0]).rotate
-  |     φ ＆ ψ => ((eta φ).rotate.plusRight (∼ψ)).rotate.with ((eta ψ).rotate.plusLeft (∼φ)).rotate
-  |     φ ⨁ ψ => (((eta φ).plusRight ψ).rotate.with ((eta ψ).plusLeft φ).rotate).rotate
-  |        ！φ => (eta φ).rotate.dereliction.rotate.ofCourse (by simp)
-  |        ？φ => (eta φ).dereliction.rotate.ofCourse (by simp) |>.rotate
-  |      ∀¹ φ =>
-    have : ⊢ᴸ [(∼φ.shift)/[&0], φ.free] := (eta φ.free).rotate.cast (by simp)
-    have : ⊢ᴸ φ.free :: [∃¹ ∼φ]⁺ := (this.exs _).rotate.cast (by simp)
+  |     A ＆ B => ((eta A).rotate.plusRight (∼B)).rotate.with ((eta B).rotate.plusLeft (∼A)).rotate
+  |     A ⨁ B => (((eta A).plusRight B).rotate.with ((eta B).plusLeft A).rotate).rotate
+  |        ！A => (eta A).rotate.dereliction.rotate.ofCourse (by simp)
+  |        ？A => (eta A).dereliction.rotate.ofCourse (by simp) |>.rotate
+  |      ∀¹ A =>
+    have : ⊢ᴸ [(∼A.shift)/[&0], A.free] := (eta A.free).rotate.cast (by simp)
+    have : ⊢ᴸ A.free :: [∃¹ ∼A]⁺ := (this.exs _).rotate.cast (by simp)
     this.all
-  |      ∃¹ φ =>
-    have : ⊢ᴸ [φ.shift/[&0], ∼φ.free] := (eta φ.free).cast (by simp)
-    have : ⊢ᴸ (∼φ).free :: [∃¹ φ]⁺ := (this.exs _).rotate.cast (by simp)
+  |      ∃¹ A =>
+    have : ⊢ᴸ [A.shift/[&0], ∼A.free] := (eta A.free).cast (by simp)
+    have : ⊢ᴸ (∼A).free :: [∃¹ A]⁺ := (this.exs _).rotate.cast (by simp)
     this.all.rotate
-  termination_by φ => φ.complexity
+  termination_by A => A.complexity
 
-def expComm (φ ψ : Proposition L) : ⊢ᴸ [！∼φ ⨂ ！∼ψ, ？(φ ⨁ ψ)] :=
-  have dφ : ⊢ᴸ [！∼φ, ？(φ ⨁ ψ)] := ((identity φ).plusRight ψ).dereliction.rotate.ofCourse (by simp)
-  have dψ : ⊢ᴸ [！∼ψ, ？(φ ⨁ ψ)] := ((identity ψ).plusLeft φ).dereliction.rotate.ofCourse (by simp)
-  have : ⊢ᴸ [！∼φ ⨂ ！∼ψ, ？(φ ⨁ ψ), ？(φ ⨁ ψ)] := dφ.tensor dψ
+def expComm (A B : Proposition L) : ⊢ᴸ [！∼A ⨂ ！∼B, ？(A ⨁ B)] :=
+  have dA : ⊢ᴸ [！∼A, ？(A ⨁ B)] := ((ax A).plusRight B).dereliction.rotate.ofCourse (by simp)
+  have dB : ⊢ᴸ [！∼B, ？(A ⨁ B)] := ((ax B).plusLeft A).dereliction.rotate.ofCourse (by simp)
+  have : ⊢ᴸ [！∼A ⨂ ！∼B, ？(A ⨁ B), ？(A ⨁ B)] := dA.tensor dB
   this.rotate.contraction.rotate
 
 def ofNegative : (ν : Proposition L) → ν.Negative → ⊢ᴸ [∼？ν, ν]
-  |    ？φ, h => (identity (？φ)).rotate.ofCourse (by simp)
+  |    ？A, h => (ax (？A)).rotate.ofCourse (by simp)
   |     ⊥, h => (one.ofCourse (by simp)).falsum.rotate
   |     ⊤, h => (verum [！0]).rotate
   | ν ⅋ μ, h =>
     have ihν : ⊢ᴸ [∼？ν, ν] := ofNegative ν (by rcases h; assumption)
     have ihμ : ⊢ᴸ [∼？μ, μ] := ofNegative μ (by rcases h; assumption)
     have : ⊢ᴸ [！(∼ν ⨂ ∼μ), ？ν, ？μ] :=
-      (((identity ν).rotate.tensor (identity μ).rotate).rotate.dereliction.rotate.dereliction.rotate).ofCourse (by simp)
+      (((ax ν).rotate.tensor (ax μ).rotate).rotate.dereliction.rotate.dereliction.rotate).ofCourse (by simp)
     have : ⊢ᴸ [！(∼ν ⨂ ∼μ), ν, μ] := (this.rotate.cut ihν).cut ihμ
     this.rotate.par.rotate
   | ν ＆ μ, h =>
     have ihν : ⊢ᴸ [∼？ν, ν] := ofNegative ν (by rcases h; assumption)
     have ihμ : ⊢ᴸ [∼？μ, μ] := ofNegative μ (by rcases h; assumption)
-    have : ⊢ᴸ [！(∼ν ⨁ ∼μ), ？ν] := ((identity ν).rotate.plusRight (∼μ)).rotate.dereliction.rotate.ofCourse (by simp)
+    have : ⊢ᴸ [！(∼ν ⨁ ∼μ), ？ν] := ((ax ν).rotate.plusRight (∼μ)).rotate.dereliction.rotate.ofCourse (by simp)
     have dν : ⊢ᴸ [ν, ！(∼ν ⨁ ∼μ)] := (this.rotate.cut ihν).rotate
-    have : ⊢ᴸ [！(∼ν ⨁ ∼μ), ？μ] := ((identity μ).rotate.plusLeft (∼ν)).rotate.dereliction.rotate.ofCourse (by simp)
+    have : ⊢ᴸ [！(∼ν ⨁ ∼μ), ？μ] := ((ax μ).rotate.plusLeft (∼ν)).rotate.dereliction.rotate.ofCourse (by simp)
     have dμ : ⊢ᴸ [μ, ！(∼ν ⨁ ∼μ)] := (this.rotate.cut ihμ).rotate
     (dν.with dμ).rotate
   |   ∀¹ ν, h =>
     have ih : ⊢ᴸ [∼？ν.free, ν.free] := ofNegative ν.free (by rcases h; simpa)
-    have : ⊢ᴸ [！(∃¹ ∼ν.shift), ？ν.free] := (exs &0 <| (identity ν.free).dereliction.rotate.cast (by simp)).ofCourse (by simp)
+    have : ⊢ᴸ [！(∃¹ ∼ν.shift), ？ν.free] := (exs &0 <| (ax ν.free).dereliction.rotate.cast (by simp)).ofCourse (by simp)
     have : ⊢ᴸ (ν).free :: [∼？(∀¹ ν)]⁺ := (this.rotate.cut ih).rotate.cast (by simp)
     this.all.rotate
   termination_by ν => ν.complexity
@@ -261,8 +261,8 @@ def addQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ ++ Δ) : ⊢ᴸ Γ ++
     have : ⊢ᴸ ？ν :: Γ ++ ？Δ := (addQuestAppendRight this).dereliction
     this.exchange (by simpa using List.Perm.symm List.perm_middle)
 
-def addQuestTail {Γ : Sequent L} (d : ⊢ᴸ φ :: Γ) : ⊢ᴸ φ :: ？Γ :=
-  have : ⊢ᴸ [φ] ++ Γ := d
+def addQuestTail {Γ : Sequent L} (d : ⊢ᴸ A :: Γ) : ⊢ᴸ A :: ？Γ :=
+  have : ⊢ᴸ [A] ++ Γ := d
   addQuestAppendRight this
 
 def removeQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ ++ ？Δ) (h : Δ.Negative) : ⊢ᴸ Γ ++ Δ :=
@@ -275,12 +275,12 @@ def removeQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ ++ ？Δ) (h : Δ.
     have : ⊢ᴸ ν :: Γ ++ Δ := (removeQuestAppendRight this hΔ).cut (ofNegative ν hν) |>.invRotate
     this.exchange (by simpa using List.Perm.symm List.perm_middle)
 
-def removeQuestTail {Γ : Sequent L} (d : ⊢ᴸ φ :: ？Γ) (h : Γ.Negative) : ⊢ᴸ φ :: Γ :=
-  have : ⊢ᴸ [φ] ++ ？Γ := d
+def removeQuestTail {Γ : Sequent L} (d : ⊢ᴸ A :: ？Γ) (h : Γ.Negative) : ⊢ᴸ A :: Γ :=
+  have : ⊢ᴸ [A] ++ ？Γ := d
   removeQuestAppendRight this h
 
-def negativeOfCourse {Γ : Sequent L} (d : ⊢ᴸ φ :: Γ) (h : Γ.Negative) : ⊢ᴸ ！φ :: Γ :=
-  have : ⊢ᴸ ！φ :: ？Γ := d.addQuestTail.ofCourse (by simp)
+def negativeOfCourse {Γ : Sequent L} (d : ⊢ᴸ A :: Γ) (h : Γ.Negative) : ⊢ᴸ ！A :: Γ :=
+  have : ⊢ᴸ ！A :: ？Γ := d.addQuestTail.ofCourse (by simp)
   this.removeQuestTail h
 
 end Derivation
