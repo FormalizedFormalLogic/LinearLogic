@@ -117,6 +117,13 @@ def IsQuest (Γ : Sequent) : Prop := ∀ A ∈ Γ, Formula.IsQuest A
 
 end Sequent
 
+inductive LL where
+  | ll
+
+notation "𝐋𝐋⁰" => LL.ll
+
+namespace LL
+
 inductive Derivation : Sequent → Type _
   /-- axiom  -/
   | ax (p : ℕ) : Derivation [.atom p, .natom p]
@@ -140,12 +147,7 @@ inductive Derivation : Sequent → Type _
 
 abbrev Proof (A : Formula) : Type _ := Derivation [A]
 
-inductive Symbol where
-  | ll
-
-notation "𝐋𝐋⁰" => Symbol.ll
-
-instance : Entailment Symbol Formula := ⟨fun _ ↦ Proof⟩
+instance : Entailment LL Formula := ⟨fun _ ↦ Proof⟩
 
 scoped prefix:45 "⊢! " => Derivation
 
@@ -185,6 +187,6 @@ def modusPonens (d₁ : 𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐋𝐋⁰ ⊢! A) : 
 
 end Proof
 
-end LO.Propositional.LinearLogic
+end LO.Propositional.LinearLogic.LL
 
 end
