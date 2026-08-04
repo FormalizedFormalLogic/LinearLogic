@@ -4,7 +4,10 @@ public import Foundation.Logic.Entailment
 public import LinearLogic.LL.Propositional
 
 /-!
-# Propositional linear logic without neutrals
+# Propositional elementary linear logic without neutrals
+
+## References
+- J.-Y. Girard, Light linear logic.
 -/
 
 @[expose] public section
