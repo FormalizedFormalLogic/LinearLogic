@@ -56,6 +56,13 @@ jobs:
       - name: Build project
         run: lake build LinearLogic
 
+      - name: Remove cached documentation state
+        run: |
+          rm -rf .lake/build/doc
+          rm -rf .lake/build/doc-data
+          rm -f .lake/build/api-docs.db
+          rm -f .lake/build/doc-manifest.json
+
       - name: Build docs
         run: lake build LinearLogic:docs
 
