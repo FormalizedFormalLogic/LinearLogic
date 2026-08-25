@@ -114,14 +114,12 @@ instance : Lolli (Fact M) := ⟨fun A B ↦ ⟨{f | ∀ a ∈ A, f * a ∈ B}, b
 @[simp] lemma mem_lolli_iff : f ∈ A ⊸ B ↔ ∀ a ∈ A, f * a ∈ B := by
   rfl
 
-instance : Bot (Fact M) where
-  bot := ⟨⫫, by simp⟩
+instance : Bot (Fact M) := ⟨⟨⫫, by simp⟩⟩
 
 @[simp] lemma mem_bot : m ∈ (⊥ : Fact M) ↔ m ∈ ⫫ := by
   rfl
 
-instance : Tilde (Fact M) where
-  tilde X := ⟨Xᗮ, by simp⟩
+instance : Tilde (Fact M) := ⟨fun X ↦ ⟨Xᗮ, by simp⟩⟩
 
 lemma coe_neg {A : Fact M} : ((∼A : Fact M) : Set M) = Aᗮ := rfl
 
