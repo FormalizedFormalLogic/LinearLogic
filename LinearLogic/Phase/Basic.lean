@@ -3,6 +3,7 @@ module
 public import Foundation.Vorspiel.Nat.Matrix
 public import Foundation.Vorspiel.NotationClass
 public import LinearLogic.Vorspiel.NotationClass
+public import LinearLogic.Vorspiel.Multiset
 
 /-!
 # Phase semantics
@@ -208,8 +209,84 @@ lemma lolli_eq_neg_par : A ⊸ B = ∼A ⅋ B := by
     intro b' hb'
     exact hf a ha b' hb'
 
+lemma quest_par : ？(A ⅋ B) = ？A ⅋ ？B := by
+  ext m
+  sorry
+
 @[grind =] lemma par_comm : A ⅋ B = B ⅋ A := by
   ext m; simp; grind
+
+@[grind =] lemma par_assoc : (A ⅋ B) ⅋ C = A ⅋ (B ⅋ C) := by
+  ext m; sorry
+
+@[simp] lemma par_bot_eq : A ⅋ ⊥ = A := by
+  ext m; sorry
+
+instance : Std.Commutative (α := Fact M) HPar.hPar := ⟨par_comm⟩
+
+instance : Std.Associative (α := Fact M) HPar.hPar := ⟨par_assoc⟩
+
+def bigPar (Γ : Multiset (Fact M)) : Fact M := Multiset.fold HPar.hPar ⊥ Γ
+
+@[simp] lemma bigPar_zero : bigPar (0 : Multiset (Fact M)) = ⊥ := by simp [bigPar]
+
+@[simp] lemma bigPar_atom (A : Fact M) : bigPar ⦃A⦄ = A := by
+  have : ⦃A⦄ = A ::ₘ 0 := by rfl
+  unfold bigPar
+  rw [this, Multiset.fold_cons_left]
+  simp
+
+@[simp] lemma bigPar_add (Γ Δ : Multiset (Fact M)) : bigPar (Γ + Δ) = bigPar Γ ⅋ bigPar Δ :=
+  calc
+  bigPar (Γ + Δ) = Multiset.fold HPar.hPar (⊥ ⅋ ⊥) (Γ + Δ) := by unfold bigPar; simp
+               _ = bigPar Γ ⅋ bigPar Δ := by rw [Multiset.fold_add]; rfl
+
+def IsTrue (A : Fact M) : Prop := 1 ∈ A
+
+namespace IsTrue
+
+@[simp] lemma one : IsTrue (1 : Fact M) := by
+  unfold IsTrue
+  rw [←neg_bot, mem_neg_iff]
+  simp
+
+lemma par_neg : IsTrue (A ⅋ ∼A) := by
+  have e : A ⅋ ∼A = A ⊸ A := by rw [par_comm, lolli_eq_neg_par]
+  suffices 1 ∈ A ⊸ A by rw [e]; exact this
+  simp
+
+lemma par_tensor (hA : IsTrue (Γ ⅋ A)) (hB : IsTrue (Δ ⅋ B)) : IsTrue (Γ ⅋ Δ ⅋ A ⨂ B) := by
+  sorry
+
+lemma par_plus_left (hA : IsTrue (Γ ⅋ A)) : IsTrue (Γ ⅋ A ⨁ B) := by
+  sorry
+
+lemma par_plus_right (hB : IsTrue (Γ ⅋ B)) : IsTrue (Γ ⅋ A ⨁ B) := by
+  sorry
+
+lemma par_with (hA : IsTrue (Γ ⅋ A)) (hB : IsTrue (Γ ⅋ B)) : IsTrue (Γ ⅋ A ＆ B) := by
+  sorry
+
+lemma dereliction (hA : IsTrue (Γ ⅋ A)) : IsTrue (Γ ⅋ ？A) := by
+  sorry
+
+lemma weakening (hA : IsTrue (Γ ⅋ A)) : IsTrue (Γ ⅋ ？A) := by
+  sorry
+
+lemma contraction (hA : IsTrue (Γ ⅋ ？A ⅋ ？A)) : IsTrue (Γ ⅋ ？A) := by
+  sorry
+
+lemma bang (hA : IsTrue (？Γ ⅋ A)) : IsTrue (？Γ ⅋ ！A) := by
+  sorry
+
+lemma cut (hp : IsTrue (Γ ⅋ A)) (hn : IsTrue (Δ ⅋ ∼A)) : IsTrue (Γ ⅋ Δ) := by
+  have hp : ∀ u ∈ ∼Γ, ∀ v, (∀ n ∈ A, v * n ∈ ⫫) → u * v ∈ ⫫ := by simpa [IsTrue, mem_neg_iff (A := A)] using hp
+  have hn : ∀ v ∈ ∼Δ, ∀ a ∈ A, v * a ∈ ⫫ := by simpa [IsTrue] using hn
+  suffices ∀ u ∈ ∼Γ, ∀ v ∈ ∼Δ, u * v ∈ ⫫ by simpa [IsTrue] using this
+  intro u hu v hv
+  exact hp u hu v (fun a ha ↦ hn v hv a ha)
+
+end IsTrue
 
 end Fact
 
