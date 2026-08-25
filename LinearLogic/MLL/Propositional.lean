@@ -2,6 +2,7 @@ module
 
 public import Foundation.Logic.Entailment
 public import LinearLogic.LogicSymbol
+public import LinearLogic.Vorspiel.Multiset
 
 /-!
 # Multiplicative linear logic without neutrals
@@ -59,20 +60,18 @@ end Formula
 
 variable {α : Type*}
 
-abbrev Sequent := List Formula
+abbrev Sequent := Multiset Formula
 
 inductive Derivation : Sequent → Type _
   /-- axiom -/
-  | ax (X : ℕ) : Derivation [.atom X, .natom X]
+  | ax (X : ℕ) : Derivation ⦃.atom X, .natom X⦄
   /-- cut rule -/
-  | cut : Derivation (A :: Γ) → Derivation (∼A :: Δ) → Derivation (Γ ++ Δ)
-  /-- structural rule -/
-  | exchange : Derivation Γ → Γ.Perm Δ → Derivation Δ
+  | cut : Derivation (Γ + ⦃A⦄) → Derivation (Δ + ⦃∼A⦄) → Derivation (Γ + Δ)
   /-- multiplicative rules -/
-  | tensor : Derivation (A :: Γ) → Derivation (B :: Δ) → Derivation (A ⨂ B :: (Γ ++ Δ))
-  | par : Derivation (A :: B :: Γ) → Derivation (A ⅋ B :: Γ)
+  | tensor : Derivation (Γ + ⦃A⦄) → Derivation (Δ + ⦃B⦄) → Derivation (Γ + Δ + ⦃A ⨂ B⦄)
+  | par : Derivation (Γ + ⦃A⦄ + ⦃B⦄) → Derivation (Γ + ⦃A ⅋ B⦄)
 
-abbrev Proof (A : Formula) : Type _ := Derivation [A]
+abbrev Proof (A : Formula) : Type _ := Derivation ⦃A⦄
 
 inductive Symbol where
   | mll
@@ -89,16 +88,21 @@ scoped prefix:45 "⊢ " => Derivable
 
 namespace Derivation
 
-def cast (d : ⊢! Γ) (e : Γ = Δ) : ⊢! Δ := e ▸ d
+def cast (d : ⊢! Γ) (e : Γ = Δ := by abel) : ⊢! Δ := e ▸ d
 
-def rotate (d : ⊢! A :: Γ) : ⊢! Γ ++ [A] :=
-  d.exchange (by grind only [List.perm_comm, List.perm_append_singleton])
+def rotate (d : ⊢! ⦃A⦄ + Γ) : ⊢! Γ + ⦃A⦄ := d.cast
 
-def eta : (A : Formula) → ⊢! [A, ∼A]
+def swap (d : ⊢! ⦃A⦄ + ⦃B⦄) : ⊢! ⦃B⦄ + ⦃A⦄ := d.cast
+
+def eta : (A : Formula) → ⊢! ⦃A, ∼A⦄
   |  .atom X => ax X
-  | .natom X => (ax X).rotate
-  |    A ⨂ B => ((eta A).tensor (eta B)).rotate.par.rotate
-  |    A ⅋ B => ((eta A).rotate.tensor (eta B).rotate).rotate.par
+  | .natom X => (ax X).swap
+  |    A ⨂ B =>
+    have d : ⊢! ⦃A ⨂ B, ∼A, ∼B⦄ := ((eta A).swap.tensor (eta B).swap).cast
+    d.par
+  |    A ⅋ B =>
+    have d : ⊢! ⦃∼A ⨂ ∼B, A, B⦄ := ((eta A).tensor (eta B)).cast
+    d.par.swap
 
 end Derivation
 
@@ -106,16 +110,22 @@ namespace Proof
 
 open Derivation
 
-def eta' : 𝐌𝐋𝐋⁰ ⊢! A ⊸ A := (eta A).rotate.par
+def eta' : 𝐌𝐋𝐋⁰ ⊢! A ⊸ A :=
+  have d : ⊢! ⦃⦄ + ⦃∼A⦄ + ⦃A⦄ := (eta A).swap.cast
+  d.par |>.cast (by simp [Formula.lolli_def])
 
 def modusPonens (d₁ : 𝐌𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐌𝐋𝐋⁰ ⊢! A) : 𝐌𝐋𝐋⁰ ⊢! B :=
-  have d₁ : ⊢! [∼(A ⨂ ∼B)] := d₁.cast <| by simp [Formula.lolli_def]
-  have b : ⊢! [A ⨂ ∼B, ∼A, B] := (eta A).tensor (eta B).rotate
-  cut d₂ (cut b d₁)
+  have d₁ : ⊢! ⦃⦄ + ⦃∼(A ⨂ ∼B)⦄ := d₁.cast (by simp [Formula.lolli_def])
+  have b : ⊢! ⦃∼A, B, A ⨂ ∼B⦄ := (eta A).swap.tensor (eta B)
+  have c : ⊢! ⦃∼A, B⦄ := (cut b d₁).cast
+  have d₂ : ⊢! ⦃⦄ + ⦃A⦄ := d₂.cast
+  (cut d₂ c.swap).cast
 
 end Proof
 
-example : 𝐌𝐋𝐋⁰ ⊢ A ⅋ ∼A := ⟨Derivation.par (Derivation.eta _)⟩
+example : 𝐌𝐋𝐋⁰ ⊢ A ⅋ ∼A := ⟨by
+  have d : ⊢! ⦃⦄ + ⦃A⦄ + ⦃∼A⦄ := (Derivation.eta A).cast
+  exact d.par.cast⟩
 
 end LO.Propositional.MultiplicativeLinearLogic
 
