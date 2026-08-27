@@ -296,38 +296,39 @@ lemma map_quest_val {v : ℕ → Fact M} {s : Sequent} (hs : s.IsQuest) :
   cases hs A hA
   exact PhaseSpace.Fact.quest_quest (v ⊩ _)
 
-theorem derivation_sound (v : ℕ → Fact M) {Γ : Sequent} (d : ⊢! Γ) :
-    (bigPar (Γ.map (Val v))).IsTrue := by
-  induction d with
-  | ax p =>
-    simpa using Fact.IsTrue.par_neg (A := v p)
-  | @cut Γ A Δ dA dN ihA ihN =>
+theorem derivation_sound (v : ℕ → Fact M) {Γ : Sequent} : ⊢! Γ →
+    (bigPar (Γ.map (Val v))).IsTrue
+  | .ax p => by simpa using Fact.IsTrue.par_neg (A := v p)
+  | .cut (A := A) dA dN => by
     simpa using Fact.IsTrue.cut (A := v ⊩ A)
-      (by simpa using ihA) (by simpa using ihN)
-  | @weakening Γ A d ih =>
-    simpa using Fact.IsTrue.weakening (A := v ⊩ A) ih
-  | @contraction Γ A d ih =>
+      (by simpa using derivation_sound v dA) (by simpa using derivation_sound v dN)
+  | .weakening (A := A) d => by
+    simpa using Fact.IsTrue.weakening (A := v ⊩ A) (derivation_sound v d)
+  | .contraction (A := A) d => by
     simpa using Fact.IsTrue.contraction (A := v ⊩ A)
-      (by simpa [Val, par_assoc] using ih)
-  | @tensor Γ A Δ B dA dB ihA ihB =>
+      (by simpa [Val, par_assoc] using derivation_sound v d)
+  | .tensor (A := A) (B := B) dA dB => by
     simpa [Val, par_assoc] using Fact.IsTrue.tensor (A := v ⊩ A) (B := v ⊩ B)
-      (by simpa using ihA) (by simpa using ihB)
-  | par d ih =>
-    simpa [Val, par_assoc] using ih
-  | @plusLeft Γ A B d ih =>
+      (by simpa using derivation_sound v dA) (by simpa using derivation_sound v dB)
+  | .par d => by
+    simpa [Val, par_assoc] using derivation_sound v d
+  | .plusLeft (A := A) (B := B) d => by
     simpa using Fact.IsTrue.plus_left (A := v ⊩ A) (B := v ⊩ B)
-      (by simpa using ih)
-  | @plusRight Γ B A d ih =>
+      (by simpa using derivation_sound v d)
+  | .plusRight (A := A) (B := B) d => by
     simpa using Fact.IsTrue.plus_right (A := v ⊩ A) (B := v ⊩ B)
-      (by simpa using ih)
-  | @«with» Γ A B dA dB ihA ihB =>
+      (by simpa using derivation_sound v d)
+  | .with (A := A) (B := B) dA dB => by
     simpa using Fact.IsTrue.with (A := v ⊩ A) (B := v ⊩ B)
-      (by simpa using ihA) (by simpa using ihB)
-  | @dereliction Γ A d ih =>
-    simpa using Fact.IsTrue.dereliction (A := v ⊩ A) (by simpa using ih)
-  | @bang Γ A d hs ih =>
-    simpa [Val, map_quest_val hs] using Fact.IsTrue.bang
-      (s := Γ.map (Val v)) (A := v ⊩ A) (by simpa using ih)
+      (by simpa using derivation_sound v dA) (by simpa using derivation_sound v dB)
+  | .dereliction (A := A) d => by
+    simpa using Fact.IsTrue.dereliction (A := v ⊩ A)
+      (by simpa using derivation_sound v d)
+  | .bang (Γ := Γ) (A := A) d hs => by
+    have h := Fact.IsTrue.bang (s := Γ.map (Val v)) (A := v ⊩ A)
+      (by simpa using derivation_sound v d)
+    rw [map_quest_val hs] at h
+    simpa using h
 
 theorem provable_sound (v : ℕ → Fact M) : 𝐋𝐋⁰ ⊢ A → (v ⊩ A).IsTrue := by
   rintro ⟨d⟩
