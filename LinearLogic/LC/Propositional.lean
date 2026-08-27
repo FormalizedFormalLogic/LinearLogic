@@ -1,6 +1,7 @@
 module
 
 public import Foundation.Logic.Entailment
+public import LinearLogic.Vorspiel.Multiset
 
 /-!
 # "Constructive" classical logic without neutrals
@@ -227,85 +228,91 @@ inductive IsPrenegative : Formula → Prop where
   | natom (X : ℕ) : IsPrenegative (Negative.natom X)
   | pos (P : Positive) : IsPrenegative P
 
-abbrev IsPrenegativeList (Γ : List Formula) : Prop := ∀ A ∈ Γ, IsPrenegative A
+abbrev IsPrenegativeMultiset (Γ : Multiset Formula) : Prop := ∀ A ∈ Γ, IsPrenegative A
 
 end Formula
 
 open Formula
 
 structure Sequent where
-  body : List Formula
+  body : Multiset Formula
   stoup : Option Positive
 
 scoped infixl:55 " ;; " => Sequent.mk
 
 inductive Derivation : Sequent → Type _
   /-- axiom -/
-  | ax (X : ℕ) : Derivation ([Negative.natom X] ;; some (.atom X))
+  | ax (X : ℕ) : Derivation (⦃(Negative.natom X : Formula)⦄ ;; some (.atom X))
   /-- cut rules -/
   | cutPos {P : Positive} :
-    Derivation (Γ ;; some P) → Derivation (((∼P : Negative) :: Δ) ;; Ξ) → Derivation (Γ ++ Δ ;; Ξ)
+    Derivation (Γ ;; some P) → Derivation (Δ + ⦃((∼P : Negative) : Formula)⦄ ;; Ξ) → Derivation (Γ + Δ ;; Ξ)
   | cutNeg {N : Negative} :
-    Derivation (N :: Γ ;; none) → Derivation ((∼N : Positive) :: Δ ;; Ξ) → Derivation (Γ ++ Δ ;; Ξ)
+    Derivation (Γ + ⦃(N : Formula)⦄ ;; none) → Derivation (Δ + ⦃((∼N : Positive) : Formula)⦄ ;; Ξ) → Derivation (Γ + Δ ;; Ξ)
   /-- structural rules -/
-  | exchange : Derivation (Γ ;; Ξ) → Γ.Perm Δ → Derivation (Δ ;; Ξ)
-  | weakening : Derivation (Γ ;; Ξ) → Derivation (A :: Γ ;; Ξ)
-  | contraction : Derivation (A :: A :: Γ ;; Ξ) → Derivation (A :: Γ ;; Ξ)
-  | dereliction : Derivation (Γ ;; some P) → Derivation (P :: Γ ;; none)
+  | weakening : Derivation (Γ ;; Ξ) → Derivation (Γ + ⦃A⦄ ;; Ξ)
+  | contraction : Derivation (Γ + ⦃A⦄ + ⦃A⦄ ;; Ξ) → Derivation (Γ + ⦃A⦄ ;; Ξ)
+  | dereliction : Derivation (Γ ;; some P) → Derivation (Γ + ⦃(P : Formula)⦄ ;; none)
   /-- logical rules -/
   | andPosPos :
-    Derivation (Γ ;; some P) → Derivation (Δ ;; some Q) → Derivation (Γ ++ Δ ;; some (P ⋏ Q))
+    Derivation (Γ ;; some P) → Derivation (Δ ;; some Q) → Derivation (Γ + Δ ;; some (P ⋏ Q))
   | andPosNeg {P : Positive} {M : Negative} :
-    Derivation (Γ ;; some P) → Derivation (M :: Δ ;; none) → Derivation (Γ ++ Δ ;; some (P ⋏ M))
+    Derivation (Γ ;; some P) → Derivation (Δ + ⦃(M : Formula)⦄ ;; none) → Derivation (Γ + Δ ;; some (P ⋏ M))
   | andNegPos {N : Negative} :
-    Derivation (.neg N :: Γ ;; none) → Derivation (Δ ;; some Q) → Derivation (Γ ++ Δ ;; some (N ⋏ Q))
+    Derivation (Γ + ⦃(N : Formula)⦄ ;; none) → Derivation (Δ ;; some Q) → Derivation (Γ + Δ ;; some (N ⋏ Q))
   | andNegNeg {N M : Negative} :
-    Derivation (N :: Γ ;; Ξ) → Derivation (M :: Γ ;; Ξ) → Derivation (N ⋏ M :: Γ ;; Ξ)
+    Derivation (Γ + ⦃(N : Formula)⦄ ;; Ξ) → Derivation (Γ + ⦃(M : Formula)⦄ ;; Ξ) →
+      Derivation (Γ + ⦃((N ⋏ M : Negative) : Formula)⦄ ;; Ξ)
   | orPosPosLeft {P Q : Positive} :
     Derivation (Γ ;; some P) → Derivation (Γ ;; some (P ⋎ Q))
   | orPosPosRight {P Q : Positive} :
     Derivation (Γ ;; some Q) → Derivation (Γ ;; some (P ⋎ Q))
   | orPosNeg {P : Positive} {M : Negative} :
-    Derivation (P :: M :: Γ ;; Ξ) → Derivation (P ⋎ M :: Γ ;; Ξ)
+    Derivation (Γ + ⦃(P : Formula)⦄ + ⦃(M : Formula)⦄ ;; Ξ) →
+      Derivation (Γ + ⦃((P ⋎ M : Negative) : Formula)⦄ ;; Ξ)
   | orNegPos {N : Negative} {Q : Positive} :
-    Derivation (N :: Q :: Γ ;; Ξ) → Derivation (N ⋎ Q :: Γ ;; Ξ)
+    Derivation (Γ + ⦃(N : Formula)⦄ + ⦃(Q : Formula)⦄ ;; Ξ) →
+      Derivation (Γ + ⦃((N ⋎ Q : Negative) : Formula)⦄ ;; Ξ)
   | orNegNeg {N M : Negative} :
-    Derivation (N :: M :: Γ ;; Ξ) → Derivation (N ⋎ M :: Γ ;; Ξ)
+    Derivation (Γ + ⦃(N : Formula)⦄ + ⦃(M : Formula)⦄ ;; Ξ) →
+      Derivation (Γ + ⦃((N ⋎ M : Negative) : Formula)⦄ ;; Ξ)
 
 prefix:45 "⊢ᴸᶜ " => Derivation
 
 inductive DerivationRev : Sequent → Type _
   /-- axiom -/
-  | ax (X : ℕ) : DerivationRev ([Negative.natom X] ;; some (.atom X))
+  | ax (X : ℕ) : DerivationRev (⦃(Negative.natom X : Formula)⦄ ;; some (.atom X))
   /-- cut rules -/
   | cutPos {P : Positive} :
-    DerivationRev (Γ ;; some P) → DerivationRev (((∼P : Negative) :: Δ) ;; Ξ) → DerivationRev (Γ ++ Δ ;; Ξ)
-  | cutNeg {N : Negative} (hΔ : IsPrenegativeList Δ) :
-    DerivationRev (N :: Γ ;; none) → DerivationRev ((∼N : Positive) :: Δ ;; Ξ) → DerivationRev (Γ ++ Δ ;; Ξ)
+    DerivationRev (Γ ;; some P) → DerivationRev (Δ + ⦃((∼P : Negative) : Formula)⦄ ;; Ξ) → DerivationRev (Γ + Δ ;; Ξ)
+  | cutNeg {N : Negative} (hΔ : IsPrenegativeMultiset Δ) :
+    DerivationRev (Γ + ⦃(N : Formula)⦄ ;; none) → DerivationRev (Δ + ⦃((∼N : Positive) : Formula)⦄ ;; Ξ) → DerivationRev (Γ + Δ ;; Ξ)
   /-- structural rules -/
-  | exchange : DerivationRev (Γ ;; Ξ) → Γ.Perm Δ → DerivationRev (Δ ;; Ξ)
-  | weakening (hA : IsPrenegative A) : DerivationRev (Γ ;; Ξ) → DerivationRev (A :: Γ ;; Ξ)
-  | contraction (hA : IsPrenegative A) : DerivationRev (A :: A :: Γ ;; Ξ) → DerivationRev (A :: Γ ;; Ξ)
-  | dereliction : DerivationRev (Γ ;; some P) → DerivationRev (P :: Γ ;; none)
+  | weakening (hA : IsPrenegative A) : DerivationRev (Γ ;; Ξ) → DerivationRev (Γ + ⦃A⦄ ;; Ξ)
+  | contraction (hA : IsPrenegative A) : DerivationRev (Γ + ⦃A⦄ + ⦃A⦄ ;; Ξ) → DerivationRev (Γ + ⦃A⦄ ;; Ξ)
+  | dereliction : DerivationRev (Γ ;; some P) → DerivationRev (Γ + ⦃(P : Formula)⦄ ;; none)
   /-- logical rules -/
   | andPosPos :
-    DerivationRev (Γ ;; some P) → DerivationRev (Δ ;; some Q) → DerivationRev (Γ ++ Δ ;; some (P ⋏ Q))
-  | andPosNeg {P : Positive} {M : Negative} (hΔ : IsPrenegativeList Δ) :
-    DerivationRev (Γ ;; some P) → DerivationRev (M :: Δ ;; none) → DerivationRev (Γ ++ Δ ;; some (P ⋏ M))
-  | andNegPos {N : Negative} (hΓ : IsPrenegativeList Γ) :
-    DerivationRev (N :: Γ ;; none) → DerivationRev (Δ ;; some Q) → DerivationRev (Γ ++ Δ ;; some (N ⋏ Q))
+    DerivationRev (Γ ;; some P) → DerivationRev (Δ ;; some Q) → DerivationRev (Γ + Δ ;; some (P ⋏ Q))
+  | andPosNeg {P : Positive} {M : Negative} (hΔ : IsPrenegativeMultiset Δ) :
+    DerivationRev (Γ ;; some P) → DerivationRev (Δ + ⦃(M : Formula)⦄ ;; none) → DerivationRev (Γ + Δ ;; some (P ⋏ M))
+  | andNegPos {N : Negative} (hΓ : IsPrenegativeMultiset Γ) :
+    DerivationRev (Γ + ⦃(N : Formula)⦄ ;; none) → DerivationRev (Δ ;; some Q) → DerivationRev (Γ + Δ ;; some (N ⋏ Q))
   | andNegNeg {N M : Negative} :
-    DerivationRev (N :: Γ ;; Ξ) → DerivationRev (M :: Γ ;; Ξ) → DerivationRev (N ⋏ M :: Γ ;; Ξ)
+    DerivationRev (Γ + ⦃(N : Formula)⦄ ;; Ξ) → DerivationRev (Γ + ⦃(M : Formula)⦄ ;; Ξ) →
+      DerivationRev (Γ + ⦃((N ⋏ M : Negative) : Formula)⦄ ;; Ξ)
   | orPosPosLeft {P Q : Positive} :
     DerivationRev (Γ ;; some P) → DerivationRev (Γ ;; some (P ⋎ Q))
   | orPosPosRight {P Q : Positive} :
     DerivationRev (Γ ;; some Q) → DerivationRev (Γ ;; some (P ⋎ Q))
   | orPosNeg {P : Positive} {M : Negative} :
-    DerivationRev (P :: M :: Γ ;; Ξ) → DerivationRev (P ⋎ M :: Γ ;; Ξ)
+    DerivationRev (Γ + ⦃(P : Formula)⦄ + ⦃(M : Formula)⦄ ;; Ξ) →
+      DerivationRev (Γ + ⦃((P ⋎ M : Negative) : Formula)⦄ ;; Ξ)
   | orNegPos {N : Negative} {Q : Positive} :
-    DerivationRev (N :: Q :: Γ ;; Ξ) → DerivationRev (N ⋎ Q :: Γ ;; Ξ)
+    DerivationRev (Γ + ⦃(N : Formula)⦄ + ⦃(Q : Formula)⦄ ;; Ξ) →
+      DerivationRev (Γ + ⦃((N ⋎ Q : Negative) : Formula)⦄ ;; Ξ)
   | orNegNeg {N M : Negative} :
-    DerivationRev (N :: M :: Γ ;; Ξ) → DerivationRev (N ⋎ M :: Γ ;; Ξ)
+    DerivationRev (Γ + ⦃(N : Formula)⦄ + ⦃(M : Formula)⦄ ;; Ξ) →
+      DerivationRev (Γ + ⦃((N ⋎ M : Negative) : Formula)⦄ ;; Ξ)
 
 prefix:45 "⊢ᴸᶜᵣ " => DerivationRev
 
