@@ -72,6 +72,15 @@ structure IsPositive (m : M) : Prop where
 
 @[simp] lemma IsPositive.one : IsPositive (1 : M) := ⟨by simp, by simp⟩
 
+lemma IsPositive.mul {x y : M} (hx : IsPositive x) (hy : IsPositive y) : IsPositive (x * y) := by
+  constructor
+  · calc
+      (x * y) * (x * y) = (x * x) * (y * y) := by ac_rfl
+      _ = x * y := by rw [hx.idempotent, hy.idempotent]
+  · intro p hp
+    have := hy.exclusive (x * p) (hx.exclusive p hp)
+    grind
+
 variable (M)
 
 structure Fact where
@@ -86,6 +95,8 @@ instance : SetLike (Fact M) M where
   coe := Fact.carrier
   coe_injective a b h := by
     cases a; cases b; congr
+
+instance : LE (Fact M) := LE.ofSetLike (Fact M) M
 
 @[simp] lemma isFact (A : Fact M) : IsFact (A : Set M) := A.isFact'
 
@@ -126,8 +137,12 @@ lemma coe_neg {A : Fact M} : ((∼A : Fact M) : Set M) = Aᗮ := rfl
 
 lemma mem_neg_iff : m ∈ ∼A ↔ ∀ n ∈ A, m * n ∈ ⫫ := by rfl
 
-@[simp] lemma bipoler_eq (A : Fact M) : ∼∼A = A := by
+@[grind =, simp] lemma bipoler_eq (A : Fact M) : ∼∼A = A := by
   apply ext_set; simp [coe_neg]
+
+@[grind .] lemma neg_antitone {A B : Fact M} (h : A ≤ B) : ∼B ≤ ∼A := by
+  intro m hm a ha
+  exact hm a (h ha)
 
 instance : Top (Fact M) := ⟨Set.univ, isFact_iff_subset.mpr <| by simp⟩
 
@@ -197,6 +212,27 @@ variable (A B)
   ∼！A = ∼∼？∼A := by simp
      _ = ？∼A   := by rw [bipoler_eq]
 
+lemma mem_bang_iff : m ∈ ！A ↔ ∀ v, (∀ a ∈ A, IsPositive a → v * a ∈ ⫫) → m * v ∈ ⫫ := by
+  rw [show ！A = ∼？∼A from rfl, mem_neg_iff]
+  simp
+
+lemma mem_neg_quest_of_positive {C : Fact M} {a : M} (hpa : IsPositive a)
+    (ha : a ∈ ∼C) : a ∈ ∼？C := by
+  intro q hq
+  simpa only [mul_comm] using (mem_quest_iff.mp hq) a ha hpa
+
+@[simp] lemma quest_quest : ？？A = ？A := by
+  ext m
+  constructor
+  · intro hm
+    apply mem_quest_iff.mpr
+    intro a ha hpa
+    exact (mem_quest_iff.mp hm) a (mem_neg_quest_of_positive hpa ha) hpa
+  · intro hm
+    apply mem_quest_iff.mpr
+    intro a ha _
+    simpa only [mul_comm] using ha m hm
+
 lemma lolli_eq_neg_par : A ⊸ B = ∼A ⅋ B := by
   ext f
   suffices (∀ a ∈ A, f * a ∈ B) ↔ ∀ u ∈ A, ∀ v ∈ ∼B, f * u * v ∈ ⫫ by simpa
@@ -209,18 +245,77 @@ lemma lolli_eq_neg_par : A ⊸ B = ∼A ⅋ B := by
     intro b' hb'
     exact hf a ha b' hb'
 
-lemma quest_par : ？(A ⅋ B) = ？A ⅋ ？B := by
-  ext m
-  sorry
-
 @[grind =] lemma par_comm : A ⅋ B = B ⅋ A := by
   ext m; simp; grind
 
+lemma mul_mem_neg_par {a b : M} (ha : a ∈ ∼A) (hb : b ∈ ∼B) : a * b ∈ ∼(A ⅋ B) := by
+  intro m hm
+  have := (mem_par_iff.mp hm) a ha b hb
+  grind
+
 @[grind =] lemma par_assoc : (A ⅋ B) ⅋ C = A ⅋ (B ⅋ C) := by
-  ext m; sorry
+  ext m
+  rw [mem_par_iff, mem_par_iff]
+  constructor
+  · intro hm a ha bc hbc
+    have hma : m * a ∈ B ⅋ C := by
+      apply mem_par_iff.mpr
+      intro b hb c hc
+      have := hm (a * b) (mul_mem_neg_par (A := A) (B := B) ha hb) c hc
+      grind
+    have := hbc (m * a) hma
+    grind
+  · intro hm ab hab c hc
+    have hmc : m * c ∈ A ⅋ B := by
+      apply mem_par_iff.mpr
+      intro a ha b hb
+      have := hm a ha (b * c) (mul_mem_neg_par (A := B) (B := C) hb hc)
+      grind
+    have := hab (m * c) hmc
+    grind
 
 @[simp] lemma par_bot_eq : A ⅋ ⊥ = A := by
-  ext m; sorry
+  ext m
+  rw [mem_par_iff]
+  constructor
+  · intro hm
+    apply A.isFact.subset
+    intro a ha
+    have hone : (1 : M) ∈ ∼(⊥ : Fact M) := by
+      change (1 : M) ∈ (⫫ : Set M)ᗮ
+      simp
+    simpa using hm a ha 1 hone
+  · intro hm a ha p hp
+    have hma : m * a ∈ ⫫ := by simpa [mul_comm] using ha m hm
+    change p ∈ (⫫ : Set M)ᗮ at hp
+    have := hp (m * a) hma
+    grind
+
+lemma par_mono {A₁ A₂ B₁ B₂ : Fact M}
+    (hA : A₁ ≤ A₂) (hB : B₁ ≤ B₂) : A₁ ⅋ B₁ ≤ A₂ ⅋ B₂ := by
+  intro m hm
+  simp only [mem_par_iff] at hm ⊢
+  intro a ha b hb
+  exact hm a (neg_antitone hA ha) b (neg_antitone hB hb)
+
+lemma bang_par_le (A B : Fact M) : ！(A ⅋ B) ≤ ？A ⅋ ！B := by
+  intro m hm
+  apply mem_par_iff.mpr
+  intro u hu v hv
+  have hu : u ∈ ！∼A := by simpa using hu
+  have hv : v ∈ ？∼B := by simpa using hv
+  have huv := (mem_bang_iff (A ⅋ B)).mp hm (u * v) (by
+    intro c hc hpc
+    have huvc := (mem_bang_iff (∼A)).mp hu (v * c) (by
+      intro a ha hpa
+      have hca : c * a ∈ B := by
+        apply B.isFact.subset
+        intro b hb
+        exact (mem_par_iff.mp hc) a ha b hb
+      have := (mem_quest_iff.mp hv) (c * a) (by simpa using hca) (hpc.mul hpa)
+      grind)
+    grind)
+  simpa only [mul_assoc] using huv
 
 instance : Std.Commutative (α := Fact M) HPar.hPar := ⟨par_comm⟩
 
@@ -241,50 +336,127 @@ def bigPar (Γ : Multiset (Fact M)) : Fact M := Multiset.fold HPar.hPar ⊥ Γ
   bigPar (Γ + Δ) = Multiset.fold HPar.hPar (⊥ ⅋ ⊥) (Γ + Δ) := by unfold bigPar; simp
                _ = bigPar Γ ⅋ bigPar Δ := by rw [Multiset.fold_add]; rfl
 
+@[simp] lemma bigPar_cons (A : Fact M) (s : Multiset (Fact M)) :
+    bigPar (A ::ₘ s) = A ⅋ bigPar s := by
+  rw [show A ::ₘ s = ⦃A⦄ + s from rfl, bigPar_add]
+  simp
+
 def IsTrue (A : Fact M) : Prop := 1 ∈ A
 
 namespace IsTrue
 
-@[simp] lemma one : IsTrue (1 : Fact M) := by
+lemma par_iff : (Γ ⅋ A).IsTrue ↔ ∼Γ ≤ A := by
+  constructor
+  · intro h m hm
+    apply A.isFact.subset
+    intro a ha
+    simpa [IsTrue] using (mem_par_iff.mp h) m hm a ha
+  · intro h
+    rw [IsTrue, mem_par_iff]
+    intro m hm a ha
+    simpa only [one_mul, mul_one, mul_assoc, mul_comm, mul_left_comm] using ha m (h hm)
+
+lemma lolli_iff : (A ⊸ B).IsTrue ↔ A ≤ B := by
+  rw [IsTrue, mem_lolli_iff]
+  simp only [one_mul]
+  rfl
+
+@[simp] lemma one : (1 : Fact M).IsTrue := by
   unfold IsTrue
   rw [←neg_bot, mem_neg_iff]
   simp
 
-lemma par_neg : IsTrue (A ⅋ ∼A) := by
-  have e : A ⅋ ∼A = A ⊸ A := by rw [par_comm, lolli_eq_neg_par]
-  suffices 1 ∈ A ⊸ A by rw [e]; exact this
-  simp
+lemma par_neg : (A ⅋ ∼A).IsTrue := by
+  rw [par_comm, ←lolli_eq_neg_par, lolli_iff]
+  exact fun _ h ↦ h
 
-lemma par_tensor (hA : IsTrue (Γ ⅋ A)) (hB : IsTrue (Δ ⅋ B)) : IsTrue (Γ ⅋ Δ ⅋ A ⨂ B) := by
-  sorry
+lemma tensor (hA : (Γ ⅋ A).IsTrue) (hB : (Δ ⅋ B).IsTrue) : (Γ ⅋ Δ ⅋ A ⨂ B).IsTrue := by
+  rw [par_iff] at hA hB
+  rw [←par_assoc, par_iff]
+  intro u hu
+  apply mem_neg_iff.mpr
+  intro v hv
+  apply hu v
+  apply mem_par_iff.mpr
+  intro g hg d hd
+  exact (mem_par_iff.mp hv) g (by simpa using hA hg) d (by simpa using hB hd)
 
-lemma par_plus_left (hA : IsTrue (Γ ⅋ A)) : IsTrue (Γ ⅋ A ⨁ B) := by
-  sorry
+lemma plus_left (hA : (Γ ⅋ A).IsTrue) : (Γ ⅋ A ⨁ B).IsTrue := by
+  rw [par_iff] at hA ⊢
+  intro m hm
+  apply mem_neg_iff.mpr
+  intro n hn
+  simpa only [mul_comm] using hn.1 m (hA hm)
 
-lemma par_plus_right (hB : IsTrue (Γ ⅋ B)) : IsTrue (Γ ⅋ A ⨁ B) := by
-  sorry
+lemma plus_right (hB : (Γ ⅋ B).IsTrue) : (Γ ⅋ A ⨁ B).IsTrue := by
+  rw [par_iff] at hB ⊢
+  intro m hm
+  apply mem_neg_iff.mpr
+  intro n hn
+  simpa only [mul_comm] using hn.2 m (hB hm)
 
-lemma par_with (hA : IsTrue (Γ ⅋ A)) (hB : IsTrue (Γ ⅋ B)) : IsTrue (Γ ⅋ A ＆ B) := by
-  sorry
+lemma «with» (hA : (Γ ⅋ A).IsTrue) (hB : (Γ ⅋ B).IsTrue) : (Γ ⅋ A ＆ B).IsTrue := by
+  rw [par_iff] at hA hB ⊢
+  exact fun _ hm ↦ ⟨hA hm, hB hm⟩
 
-lemma dereliction (hA : IsTrue (Γ ⅋ A)) : IsTrue (Γ ⅋ ？A) := by
-  sorry
+lemma dereliction (hA : (Γ ⅋ A).IsTrue) : (Γ ⅋ ？A).IsTrue := by
+  rw [par_iff] at hA ⊢
+  intro m hm
+  apply mem_quest_iff.mpr
+  intro a ha _
+  simpa only [mul_comm] using ha m (hA hm)
 
-lemma weakening (hA : IsTrue (Γ ⅋ A)) : IsTrue (Γ ⅋ ？A) := by
-  sorry
+lemma weakening (hA : Γ.IsTrue) : (Γ ⅋ ？A).IsTrue := by
+  rw [par_iff]
+  intro m hm
+  apply mem_quest_iff.mpr
+  intro a _ ha
+  have hm : m ∈ ⫫ := by simpa using hm 1 hA
+  simpa only [mul_comm] using ha.exclusive m hm
 
-lemma contraction (hA : IsTrue (Γ ⅋ ？A ⅋ ？A)) : IsTrue (Γ ⅋ ？A) := by
-  sorry
+lemma contraction (hA : (Γ ⅋ ？A ⅋ ？A).IsTrue) : (Γ ⅋ ？A).IsTrue := by
+  rw [par_iff] at hA ⊢
+  intro m hm
+  apply mem_quest_iff.mpr
+  intro a ha hpa
+  have ha' := mem_neg_quest_of_positive hpa ha
+  have := (mem_par_iff.mp (hA hm)) a ha' a ha'
+  simpa only [mul_assoc, hpa.idempotent] using this
 
-lemma bang (hA : IsTrue (？Γ ⅋ A)) : IsTrue (？Γ ⅋ ！A) := by
-  sorry
+lemma context_free_bang (hA : A.IsTrue) : (！A).IsTrue := by
+  rw [IsTrue, mem_bang_iff]
+  intro v hv
+  simpa using hv 1 hA IsPositive.one
 
-lemma cut (hp : IsTrue (Γ ⅋ A)) (hn : IsTrue (Δ ⅋ ∼A)) : IsTrue (Γ ⅋ Δ) := by
+lemma application (hp : (A ⊸ B).IsTrue) (hn : A.IsTrue) : B.IsTrue := by
+  exact (lolli_iff (A := A) (B := B)).mp hp hn
+
+lemma promotion (s : Multiset (Fact M)) : (！(bigPar s ⅋ B) ⊸ bigPar (s.map (？·)) ⅋ ！B).IsTrue := by
+  rw [lolli_iff]
+  induction s using Multiset.induction_on with
+  | empty =>
+    intro m hm
+    rw [bigPar_zero, par_comm, par_bot_eq] at hm
+    rw [Multiset.map_zero, bigPar_zero, par_comm, par_bot_eq]
+    exact hm
+  | @cons C s ih =>
+    intro m hm
+    rw [bigPar_cons, par_assoc] at hm
+    have hm := bang_par_le C (bigPar s ⅋ B) hm
+    have hm := par_mono (A₁ := ？C) (A₂ := ？C) (fun _ h ↦ h) ih hm
+    simpa only [Multiset.map_cons, bigPar_cons, par_assoc] using hm
+
+lemma bang (hA : (bigPar s ⅋ A).IsTrue) : (bigPar (s.map (？·)) ⅋ ！A).IsTrue := by
+  exact application
+    (A := ！(bigPar s ⅋ A)) (B := bigPar (s.map (？·)) ⅋ ！A)
+    (promotion (B := A) s) (context_free_bang (A := bigPar s ⅋ A) hA)
+
+lemma cut (hp : (Γ ⅋ A).IsTrue) (hn : (Δ ⅋ ∼A).IsTrue) : (Γ ⅋ Δ).IsTrue := by
   have hp : ∀ u ∈ ∼Γ, ∀ v, (∀ n ∈ A, v * n ∈ ⫫) → u * v ∈ ⫫ := by simpa [IsTrue, mem_neg_iff (A := A)] using hp
   have hn : ∀ v ∈ ∼Δ, ∀ a ∈ A, v * a ∈ ⫫ := by simpa [IsTrue] using hn
   suffices ∀ u ∈ ∼Γ, ∀ v ∈ ∼Δ, u * v ∈ ⫫ by simpa [IsTrue] using this
   intro u hu v hv
-  exact hp u hu v (fun a ha ↦ hn v hv a ha)
+  exact hp u hu v (hn v hv)
 
 end IsTrue
 

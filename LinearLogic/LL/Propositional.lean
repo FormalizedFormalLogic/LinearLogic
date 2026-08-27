@@ -3,6 +3,7 @@ module
 public import Foundation.Logic.Entailment
 public import LinearLogic.LogicSymbol
 public import LinearLogic.Vorspiel.Multiset
+public import LinearLogic.PhaseSpace.Basic
 
 /-!
 # Propositional linear logic without neutrals
@@ -87,6 +88,46 @@ instance : TildeInvolutive Formula where
   tilde_involutive := neg_neg
 
 lemma lolli_def (A B : Formula) : A ⊸ B = ∼A ⅋ B := rfl
+
+@[elab_as_elim]
+def cases' {C : Formula → Sort*}
+    (hAtom   : ∀ X, C (atom X))
+    (hNAtom  : ∀ X, C (natom X))
+    (hTensor : ∀ (A B : Formula), C (A ⨂ B))
+    (hPar    : ∀ (A B : Formula), C (A ⅋ B))
+    (hPlus   : ∀ (A B : Formula), C (A ⨁ B))
+    (hWith   : ∀ (A B : Formula), C (A ＆ B))
+    (hBang   : ∀ (A : Formula), C (！A))
+    (hQuest  : ∀ (A : Formula), C (？A)) :
+    (A : Formula) → C A
+  |  atom X => hAtom X
+  | natom X => hNAtom X
+  |   A ⨂ B => hTensor A B
+  |   A ⅋ B => hPar A B
+  |   A ⨁ B => hPlus A B
+  |  A ＆ B => hWith A B
+  |     ！A => hBang A
+  |     ？A => hQuest A
+
+@[elab_as_elim]
+def rec' {C : Formula → Sort w}
+  (hAtom   : ∀ X, C (atom X))
+  (hNAtom  : ∀ X, C (natom X))
+  (hTensor : ∀ (A B : Formula), C A → C B → C (A ⨂ B))
+  (hPar    : ∀ (A B : Formula), C A → C B → C (A ⅋ B))
+  (hPlus   : ∀ (A B : Formula), C A → C B → C (A ⨁ B))
+  (hWith   : ∀ (A B : Formula), C A → C B → C (A ＆ B))
+  (hBang   : ∀ (A : Formula), C A → C (！A))
+  (hQuest  : ∀ (A : Formula), C A → C (？A))
+  : (A : Formula) → C A
+  |  atom X => hAtom X
+  | natom X => hNAtom X
+  |   A ⨂ B => hTensor A B (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest A) (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest B)
+  |   A ⅋ B => hPar A B (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest A) (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest B)
+  |   A ⨁ B => hPlus A B (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest A) (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest B)
+  |  A ＆ B => hWith A B (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest A) (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest B)
+  |     ！A => hBang A (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest A)
+  |     ？A => hQuest A (rec' hAtom hNAtom hTensor hPar hPlus hWith hBang hQuest A)
 
 inductive IsQuest : Formula → Prop
   | intro : IsQuest (？A)
@@ -203,6 +244,101 @@ def modusPonens (d₁ : 𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐋𝐋⁰ ⊢! A) : 
   (cut d₂ c.swap).cast
 
 end Proof
+
+namespace PhaseSemantics
+
+variable {M : Type*} [PhaseSpace M]
+
+open PhaseSpace PhaseSpace.Fact
+
+def Val (v : ℕ → Fact M) : Formula → Fact M
+  |  .atom X => v X
+  | .natom X => ∼v X
+  |    A ⨂ B => Val v A ⨂ Val v B
+  |    A ⅋ B => Val v A ⅋ Val v B
+  |    A ⨁ B => Val v A ⨁ Val v B
+  |   A ＆ B => Val v A ＆ Val v B
+  |      ！A => ！Val v A
+  |      ？A => ？Val v A
+
+scoped infix:45 " ⊩ " => Val
+
+namespace Val
+
+variable {v : ℕ → Fact M} {A B : Formula}
+
+@[simp] lemma atom_eq : (v ⊩ .atom X) = v X := rfl
+
+@[simp] lemma natom_eq : (v ⊩ .natom X) = ∼v X := rfl
+
+@[simp] lemma tensor_eq : (v ⊩ A ⨂ B) = (v ⊩ A) ⨂ (v ⊩ B) := rfl
+
+@[simp] lemma par_eq : (v ⊩ A ⅋ B) = (v ⊩ A) ⅋ (v ⊩ B) := rfl
+
+@[simp] lemma plus_eq : (v ⊩ A ⨁ B) = (v ⊩ A) ⨁ (v ⊩ B) := rfl
+
+@[simp] lemma with_eq : (v ⊩ A ＆ B) = (v ⊩ A) ＆ (v ⊩ B) := rfl
+
+@[simp] lemma bang_eq : (v ⊩ ！A) = ！(v ⊩ A) := rfl
+
+@[simp] lemma quest_eq : (v ⊩ ？A) = ？(v ⊩ A) := rfl
+
+@[simp] lemma neg_eq : (v ⊩ ∼A) = ∼(v ⊩ A) := by
+  induction A using Formula.rec' <;> simp [*]
+
+end Val
+
+lemma map_quest_val {v : ℕ → Fact M} {s : Sequent} (hs : s.IsQuest) :
+    (s.map (Val v)).map (？·) = s.map (Val v) := by
+  rw [Multiset.map_map]
+  apply Multiset.map_congr rfl
+  intro A hA
+  cases hs A hA
+  exact PhaseSpace.Fact.quest_quest (v ⊩ _)
+
+theorem derivation_sound (v : ℕ → Fact M) {Γ : Sequent} (d : ⊢! Γ) :
+    (bigPar (Γ.map (Val v))).IsTrue := by
+  induction d with
+  | ax p =>
+    simpa using Fact.IsTrue.par_neg (A := v p)
+  | @cut Γ A Δ dA dN ihA ihN =>
+    simpa using Fact.IsTrue.cut (A := v ⊩ A)
+      (by simpa using ihA) (by simpa using ihN)
+  | @weakening Γ A d ih =>
+    simpa using Fact.IsTrue.weakening (A := v ⊩ A) ih
+  | @contraction Γ A d ih =>
+    simpa using Fact.IsTrue.contraction (A := v ⊩ A)
+      (by simpa [Val, par_assoc] using ih)
+  | @tensor Γ A Δ B dA dB ihA ihB =>
+    simpa [Val, par_assoc] using Fact.IsTrue.tensor (A := v ⊩ A) (B := v ⊩ B)
+      (by simpa using ihA) (by simpa using ihB)
+  | par d ih =>
+    simpa [Val, par_assoc] using ih
+  | @plusLeft Γ A B d ih =>
+    simpa using Fact.IsTrue.plus_left (A := v ⊩ A) (B := v ⊩ B)
+      (by simpa using ih)
+  | @plusRight Γ B A d ih =>
+    simpa using Fact.IsTrue.plus_right (A := v ⊩ A) (B := v ⊩ B)
+      (by simpa using ih)
+  | @«with» Γ A B dA dB ihA ihB =>
+    simpa using Fact.IsTrue.with (A := v ⊩ A) (B := v ⊩ B)
+      (by simpa using ihA) (by simpa using ihB)
+  | @dereliction Γ A d ih =>
+    simpa using Fact.IsTrue.dereliction (A := v ⊩ A) (by simpa using ih)
+  | @bang Γ A d hs ih =>
+    simpa [Val, map_quest_val hs] using Fact.IsTrue.bang
+      (s := Γ.map (Val v)) (A := v ⊩ A) (by simpa using ih)
+
+theorem provable_sound (v : ℕ → Fact M) : 𝐋𝐋⁰ ⊢ A → (v ⊩ A).IsTrue := by
+  rintro ⟨d⟩
+  simpa using derivation_sound v d
+
+instance : Semantics (PSigma PhaseSpace) Formula := ⟨fun ⟨M, _⟩ A ↦ ∀ v : ℕ → Fact M, (v ⊩ A).IsTrue⟩
+
+instance (M : Type*) [PhaseSpace M] : Sound 𝐋𝐋⁰ (⟨M, inferInstance⟩ : PSigma PhaseSpace) :=
+  ⟨fun h v ↦ provable_sound v h⟩
+
+end PhaseSemantics
 
 end LO.Propositional.LinearLogic.LL
 

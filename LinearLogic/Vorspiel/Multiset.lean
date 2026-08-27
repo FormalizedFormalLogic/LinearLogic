@@ -28,6 +28,9 @@ lemma atom_eq_singleton (a : α) : ⦃a⦄ = {a} := rfl
 
 @[simp] lemma mem_atom_iff {a b : α} : a ∈ ⦃b⦄ ↔ a = b := by simp [atom_eq_singleton]
 
+@[simp] lemma map_atom (f : α → β) (a : α) : ⦃a⦄.map f = ⦃f a⦄ := by
+  simp [atom_eq_singleton]
+
 @[simp] lemma atom_subset_iff {a : α} {s : Multiset α} : ⦃a⦄ ≤ s ↔ a ∈ s := by simp [atom_eq_singleton]
 
 end Multiset
