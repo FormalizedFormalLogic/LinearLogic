@@ -306,12 +306,12 @@ theorem derivation_sound (v : ℕ → Fact M) {Γ : Sequent} : ⊢! Γ →
     simpa using Fact.IsTrue.weakening (A := v ⊩ A) (derivation_sound v d)
   | .contraction (A := A) d => by
     simpa using Fact.IsTrue.contraction (A := v ⊩ A)
-      (by simpa [Val, par_assoc] using derivation_sound v d)
+      (by simpa [par_assoc] using derivation_sound v d)
   | .tensor (A := A) (B := B) dA dB => by
-    simpa [Val, par_assoc] using Fact.IsTrue.tensor (A := v ⊩ A) (B := v ⊩ B)
+    simpa [par_assoc] using Fact.IsTrue.tensor (A := v ⊩ A) (B := v ⊩ B)
       (by simpa using derivation_sound v dA) (by simpa using derivation_sound v dB)
   | .par d => by
-    simpa [Val, par_assoc] using derivation_sound v d
+    simpa [par_assoc] using derivation_sound v d
   | .plusLeft (A := A) (B := B) d => by
     simpa using Fact.IsTrue.plus_left (A := v ⊩ A) (B := v ⊩ B)
       (by simpa using derivation_sound v d)
