@@ -4,7 +4,7 @@ public import LinearLogic.LL.FirstOrder.Formula
 
 @[expose] public section
 
-namespace LO.FirstOrder.LinearLogic
+namespace FFL.FirstOrder.LinearLogic
 
 namespace Semiformula
 
@@ -166,4 +166,4 @@ instance : LawfulSyntacticRewriting L (Semiproposition L) where
 
 end Semiformula
 
-end LO.FirstOrder.LinearLogic
+end FFL.FirstOrder.LinearLogic

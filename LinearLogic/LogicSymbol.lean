@@ -7,7 +7,7 @@ public import LinearLogic.Vorspiel.NotationClass
 
 @[expose] public section
 
-namespace LO
+namespace FFL
 
 class MultiplicativeConnective (α : Type*) extends Tensor α, Par α where
   tensor_injective : Function.Injective2 tensor
@@ -118,8 +118,23 @@ lemma listQuest_def (Γ : List F) : ？Γ = Γ.map (？·) := rfl
 @[simp] lemma listQuest_append (Γ Δ : List F) :
     ？(Γ ++ Δ) = ？Γ ++ ？Δ := by simp [listQuest_def]
 
+/-- Pointwise application of `quest` to a multiset. This is a routine algebraic lifting. -/
+def multisetQuest (Γ : Multiset F) : Multiset F := Γ.map (？·)
+
+instance : Quest (Multiset F) := ⟨multisetQuest⟩
+
+lemma multisetQuest_def (Γ : Multiset F) : ？Γ = Γ.map (？·) := rfl
+
+@[simp] lemma multisetQuest_zero : ？(0 : Multiset F) = 0 := rfl
+
+@[simp] lemma multisetQuest_add (Γ Δ : Multiset F) : ？(Γ + Δ) = ？Γ + ？Δ := by
+  simp [multisetQuest_def]
+
+@[simp] lemma multisetQuest_atom (A : F) : ？(⦃A⦄ : Multiset F) = ⦃？A⦄ := by
+  simp [multisetQuest_def]
+
 end ExponentialConnective
 
-end LO
+end FFL
 
 end
