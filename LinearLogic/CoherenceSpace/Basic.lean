@@ -11,7 +11,7 @@ Reference: Jean-Yves Girard, Paul Taylor, Yves Lafont, Proofs and Types [G.T.L89
 
 @[expose] public section
 
-namespace LO
+namespace FFL
 
 /-- A coherence space is a set equipped with a coherence relation `⁐`, which is reflexive and symmetric. -/
 class CoherenceSpace (α : Type*) where
@@ -366,7 +366,7 @@ end ArrowPar
 
 abbrev Lolli (α β : Type*) : Type _ := Par αᗮ β
 
-namespace Lolli
+namespace FFLlli
 
 variable {α β : Type*} [CoherenceSpace α] [CoherenceSpace β]
 
@@ -378,7 +378,7 @@ protected def id : Point (Lolli α α) := ⟨{.mk (.mk a) a | a}, by
   rcases this
   simp [Par.mk_coherence_mk_iff]; grind⟩
 
-end Lolli
+end FFLlli
 
 /-! #### &: Additive conjunction -/
 
@@ -492,6 +492,6 @@ end BigPlus
 
 end CoherenceSpace
 
-end LO
+end FFL
 
 #min_imports

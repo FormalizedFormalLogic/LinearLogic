@@ -20,7 +20,7 @@ lemma of_terminal_elem (hu : u ∈ s) (h : ∀ x ∈ s, r x u) : DirectedOn r s 
 
 end DirectedOn
 
-namespace LO
+namespace FFL
 
 @[ext] structure StableFunction (α β : Type*) [CoherenceSpace α] [CoherenceSpace β] where
   toFun : Point α → Point β
@@ -85,4 +85,4 @@ lemma comp_assoc (h : γ →ₛ δ) (g : β →ₛ γ) (f : α →ₛ β) :
 
 end StableFunction
 
-end LO
+end FFL

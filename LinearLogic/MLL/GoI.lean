@@ -13,7 +13,7 @@ public import LinearLogic.Vorspiel.GroupTheory.Perm
 
 @[expose] public section
 
-namespace LO.Propositional.LinearLogic.Multiplicative.GoI
+namespace FFL.Propositional.LinearLogic.Multiplicative.GoI
 
 open Equiv.Perm
 
@@ -232,7 +232,7 @@ def execution (𝔣 : Project γ) (𝔞 : Project {x : γ // P x}) : Project {x 
 def executionSum (𝔣 : Project (α ⊕ β)) (𝔞 : Project α) : Project β :=
   (execution 𝔣 (𝔞.delocate IsLeftEquivLeft.symm)).delocate notIsLeftEquivRight
 
-scoped[LO.Propositional.LinearLogic.Multiplicative.GoI] infix:60 " ∷ " => Project.executionSum
+scoped[FFL.Propositional.LinearLogic.Multiplicative.GoI] infix:60 " ∷ " => Project.executionSum
 
 @[simp] lemma executionSum_wager (𝔣 : Project (α ⊕ β)) (𝔞 : Project α) :
     (𝔣 ∷ 𝔞).wager = 𝔣.wager + 𝔞.wager + (𝔣 * (𝔞 + (1 : Project β))).plot.closedCycles (Sum.isLeft ·) := by
@@ -376,4 +376,4 @@ def Conduct.IsSuccessful (A : Conduct α) : Prop :=
 
 end GoI
 
-end LO.Propositional.LinearLogic.Multiplicative
+end FFL.Propositional.LinearLogic.Multiplicative

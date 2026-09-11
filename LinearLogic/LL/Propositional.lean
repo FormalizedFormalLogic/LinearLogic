@@ -2,7 +2,6 @@ module
 
 public import Foundation.Logic.Entailment
 public import LinearLogic.LogicSymbol
-public import LinearLogic.Vorspiel.Multiset
 public import LinearLogic.PhaseSpace.Basic
 
 /-!
@@ -11,7 +10,7 @@ public import LinearLogic.PhaseSpace.Basic
 
 @[expose] public section
 
-namespace LO.Propositional.LinearLogic
+namespace FFL.Propositional.LinearLogic
 
 inductive Formula where
   | atom : ℕ → Formula
@@ -341,6 +340,6 @@ instance (M : Type*) [PhaseSpace M] : Sound 𝐋𝐋⁰ (⟨M, inferInstance⟩ 
 
 end PhaseSemantics
 
-end LO.Propositional.LinearLogic.LL
+end FFL.Propositional.LinearLogic.LL
 
 end

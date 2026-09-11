@@ -1,7 +1,6 @@
 module
 
 public import Foundation.Logic.Entailment
-public import LinearLogic.Vorspiel.Multiset
 
 /-!
 # "Constructive" classical logic without neutrals
@@ -13,7 +12,7 @@ public import LinearLogic.Vorspiel.Multiset
 
 @[expose] public section
 
-namespace LO.Propositional.LC
+namespace FFL.Propositional.LC
 
 namespace Formula
 
@@ -316,6 +315,6 @@ inductive DerivationRev : Sequent → Type _
 
 prefix:45 "⊢ᴸᶜᵣ " => DerivationRev
 
-end LO.Propositional.LC
+end FFL.Propositional.LC
 
 end

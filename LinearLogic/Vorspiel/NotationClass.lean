@@ -9,7 +9,7 @@ public import Mathlib.Data.Nat.Basic
 
 @[expose] public section
 
-namespace LO
+namespace FFL
 
 /-! ## Heterogeneous notations -/
 
@@ -120,4 +120,4 @@ instance [Bang α] : HBang α α := ⟨Bang.bang⟩
 @[default_instance]
 instance [Quest α] : HQuest α α := ⟨Quest.quest⟩
 
-end LO
+end FFL

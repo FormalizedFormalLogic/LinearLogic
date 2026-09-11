@@ -3,7 +3,7 @@ module
 public import Foundation.Vorspiel.Nat.Matrix
 public import Foundation.Vorspiel.NotationClass
 public import LinearLogic.Vorspiel.NotationClass
-public import LinearLogic.Vorspiel.Multiset
+public import Foundation.Vorspiel.Multiset
 
 /-!
 # Phase semantics
@@ -11,7 +11,7 @@ public import LinearLogic.Vorspiel.Multiset
 
 @[expose] public section
 
-namespace LO
+namespace FFL
 
 class PhaseSpace (M : Type*) extends CommMonoid M where
   pole : Set M
@@ -464,4 +464,4 @@ end Fact
 
 end PhaseSpace
 
-end LO
+end FFL
