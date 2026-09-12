@@ -3,7 +3,6 @@ module
 public import Foundation.Logic.Entailment
 public import LinearLogic.LogicSymbol
 public import LinearLogic.PhaseSpace.Basic
-public import LinearLogic.Vorspiel.Multiset
 
 /-!
 # Multiplicative exponential linear logic without neutrals
@@ -11,7 +10,7 @@ public import LinearLogic.Vorspiel.Multiset
 
 @[expose] public section
 
-namespace LO.Propositional.LinearLogic.MultiplicativeExponential
+namespace FFL.Propositional.LinearLogic.MultiplicativeExponential
 
 inductive Formula where
   | atom : ℕ → Formula
@@ -290,6 +289,6 @@ instance (M : Type*) [PhaseSpace M] : Sound 𝐌𝐄𝐋𝐋 (⟨M, inferInstanc
 
 end PhaseSemantics
 
-end LO.Propositional.LinearLogic.MultiplicativeExponential
+end FFL.Propositional.LinearLogic.MultiplicativeExponential
 
 end

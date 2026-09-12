@@ -9,7 +9,7 @@ public import LinearLogic.LogicSymbol
 
 @[expose] public section
 
-namespace LO.FirstOrder.LinearLogic
+namespace FFL.FirstOrder.LinearLogic
 
 open FirstOrder
 
@@ -587,6 +587,6 @@ end Positive
 
 end Semiformula
 
-end LO.FirstOrder.LinearLogic
+end FFL.FirstOrder.LinearLogic
 
 end

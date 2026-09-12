@@ -12,7 +12,7 @@ public import LinearLogic.LL.Propositional
 
 @[expose] public section
 
-namespace LO.Propositional.LinearLogic
+namespace FFL.Propositional.LinearLogic
 
 inductive ELL where
   | ell
@@ -90,6 +90,6 @@ def modusPonens (d₁ : 𝐄𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐄𝐋𝐋⁰ �
 
 end Proof
 
-end LO.Propositional.LinearLogic.ELL
+end FFL.Propositional.LinearLogic.ELL
 
 end

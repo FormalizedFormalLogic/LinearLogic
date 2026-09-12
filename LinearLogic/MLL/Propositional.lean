@@ -3,7 +3,6 @@ module
 public import Foundation.Logic.Entailment
 public import LinearLogic.LogicSymbol
 public import LinearLogic.PhaseSpace.Basic
-public import LinearLogic.Vorspiel.Multiset
 
 /-!
 # Multiplicative linear logic without neutrals
@@ -11,7 +10,7 @@ public import LinearLogic.Vorspiel.Multiset
 
 @[expose] public section
 
-namespace LO.Propositional.MultiplicativeLinearLogic
+namespace FFL.Propositional.MultiplicativeLinearLogic
 
 inductive Formula where
   | atom : ℕ → Formula
@@ -207,6 +206,6 @@ example : 𝐌𝐋𝐋⁰ ⊢ A ⅋ ∼A := ⟨by
   have d : ⊢! ⦃⦄ + ⦃A⦄ + ⦃∼A⦄ := (Derivation.eta A).cast
   exact d.par.cast⟩
 
-end LO.Propositional.MultiplicativeLinearLogic
+end FFL.Propositional.MultiplicativeLinearLogic
 
 end

@@ -11,7 +11,7 @@ Reference: Jean-Yves Girard, Paul Taylor, Yves Lafont, Proofs and Types [G.T.L89
 
 @[expose] public section
 
-namespace LO
+namespace FFL
 
 /-- A coherence space is a set equipped with a coherence relation `⁐`, which is reflexive and symmetric. -/
 class CoherenceSpace (α : Type*) where
@@ -492,6 +492,6 @@ end BigPlus
 
 end CoherenceSpace
 
-end LO
+end FFL
 
 #min_imports
