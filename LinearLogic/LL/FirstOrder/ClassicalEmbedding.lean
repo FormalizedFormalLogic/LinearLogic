@@ -84,7 +84,7 @@ end Sequent
 namespace Derivation
 
 def forget [L.DecidableEq] {Γ : Sequent L} :
-    ⊢ᴸ Γ → Γ.Traversal → ⊢ᴸᴷ¹ Γ.forget
+    ⊢ᴸᴸ¹ Γ → Γ.Traversal → ⊢ᴸᴷ¹ Γ.forget
   | ax A, _ => (FirstOrder.Derivation.eta A.forget).cast (by simp [Sequent.forget])
   | cut (A := A) (Γ := Γ) (Δ := Δ) d₁ d₂, t =>
     let tΓ := t.restrict (Multiset.le_add_right Γ Δ)
@@ -382,133 +382,133 @@ local postfix:max "†" => Semiformula.girard
 local postfix:max "‡" => Semiformula.Girard
 local postfix:max "‡" => Sequent.Girard
 
-def toLL {Γ : Sequent L} : ⊢ᴸᴷ¹ Γ → ⊢ᴸ Γ‡
+def toLL {Γ : Sequent L} : ⊢ᴸᴷ¹ Γ → ⊢ᴸᴸ¹ Γ‡
   | .identity R v =>
-    have d : ⊢ᴸ ⦃？.nrel R v⦄ + ⦃！.rel R v⦄ :=
+    have d : ⊢ᴸᴸ¹ ⦃？.nrel R v⦄ + ⦃！.rel R v⦄ :=
       (LinearLogic.Derivation.ax (！.rel R v)).cast (by abel)
     d.dereliction.cast (by simp [Sequent.Girard, Semiformula.Girard, add_comm])
   | .cut (φ := A) (Γ := Γ₁) (Δ := Δ₁) d₁ d₂ =>
     match h : A.polarity with
     |  true =>
-      have b₁ : ⊢ᴸ Γ₁‡ + ⦃？A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h])
-      have d : ⊢ᴸ Δ₁‡ + ⦃∼A†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h])
-      have b₂ : ⊢ᴸ Δ₁‡ + ⦃∼？A†⦄ :=
+      have b₁ : ⊢ᴸᴸ¹ Γ₁‡ + ⦃？A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h])
+      have d : ⊢ᴸᴸ¹ Δ₁‡ + ⦃∼A†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h])
+      have b₂ : ⊢ᴸᴸ¹ Δ₁‡ + ⦃∼？A†⦄ :=
         d.negativeOfCourse (d₂.traversal.remove.map Semiformula.Girard) (by simp)
       (b₁.cut b₂).cast (by simp [Sequent.Girard])
     | false =>
-      have b₂ : ⊢ᴸ Δ₁‡ + ⦃∼！A†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h])
-      have d : ⊢ᴸ Γ₁‡ + ⦃A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h])
-      have b₁ : ⊢ᴸ Γ₁‡ + ⦃！A†⦄ :=
+      have b₂ : ⊢ᴸᴸ¹ Δ₁‡ + ⦃∼！A†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h])
+      have d : ⊢ᴸᴸ¹ Γ₁‡ + ⦃A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h])
+      have b₁ : ⊢ᴸᴸ¹ Γ₁‡ + ⦃！A†⦄ :=
         d.negativeOfCourse (d₁.traversal.remove.map Semiformula.Girard) (by simp)
       (b₁.cut b₂).cast (by simp [Sequent.Girard])
   | .contraction (Γ := Γ) (φ := A) d =>
-    have d : ⊢ᴸ Γ‡ + ⦃A‡⦄ + ⦃A‡⦄ := d.toLL.cast (by simp [Sequent.Girard, add_assoc])
+    have d : ⊢ᴸᴸ¹ Γ‡ + ⦃A‡⦄ + ⦃A‡⦄ := d.toLL.cast (by simp [Sequent.Girard, add_assoc])
     (d.negativeContraction (by simp)).cast (by simp [Sequent.Girard])
   | .weakening (φ := A) d =>
     (d.toLL.negativeWeakening (ν := A‡) (by simp)).cast (by simp [Sequent.Girard])
   | .verum =>
-    ((LinearLogic.Derivation.one.cast : ⊢ᴸ ⦃⦄ + ⦃1⦄).dereliction : ⊢ᴸ ⦃⦄ + ⦃？1⦄).cast
+    ((LinearLogic.Derivation.one.cast : ⊢ᴸᴸ¹ ⦃⦄ + ⦃1⦄).dereliction : ⊢ᴸᴸ¹ ⦃⦄ + ⦃？1⦄).cast
   | .and (Γ := Γ) (φ := A) (ψ := B) d₁ d₂ =>
     let tΓ := d₁.traversal.remove.map Semiformula.Girard
-    let questTensorQuest (dA : ⊢ᴸ Γ‡ + ⦃？A†⦄) (dB : ⊢ᴸ Γ‡ + ⦃？B†⦄)
-        (hB : B†.Positive) : ⊢ᴸ Γ‡ + ⦃？(A† ⨂ B†)⦄ :=
-      have d : ⊢ᴸ ⦃∼A†, ∼B†, ？(A† ⨂ B†)⦄ :=
+    let questTensorQuest (dA : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†⦄) (dB : ⊢ᴸᴸ¹ Γ‡ + ⦃？B†⦄)
+        (hB : B†.Positive) : ⊢ᴸᴸ¹ Γ‡ + ⦃？(A† ⨂ B†)⦄ :=
+      have d : ⊢ᴸᴸ¹ ⦃∼A†, ∼B†, ？(A† ⨂ B†)⦄ :=
         (LinearLogic.Derivation.tensorAxiom A† B†).dereliction
-      have d : ⊢ᴸ ⦃∼B†, ？(A† ⨂ B†)⦄ + ⦃∼A†⦄ := d.cast
-      have d : ⊢ᴸ ⦃∼B†, ？(A† ⨂ B†)⦄ + ⦃∼？A†⦄ :=
+      have d : ⊢ᴸᴸ¹ ⦃∼B†, ？(A† ⨂ B†)⦄ + ⦃∼A†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ ⦃∼B†, ？(A† ⨂ B†)⦄ + ⦃∼？A†⦄ :=
         d.negativeOfCourse ((Multiset.Traversal.atom _).succ _) (by simp [hB])
-      have d : ⊢ᴸ Γ‡ + ⦃∼B†, ？(A† ⨂ B†)⦄ := (dA.cut d).cast
-      have d : ⊢ᴸ Γ‡ + ⦃？(A† ⨂ B†)⦄ + ⦃∼B†⦄ := d.cast
-      have d : ⊢ᴸ Γ‡ + ⦃？(A† ⨂ B†)⦄ + ⦃∼？B†⦄ :=
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃∼B†, ？(A† ⨂ B†)⦄ := (dA.cut d).cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？(A† ⨂ B†)⦄ + ⦃∼B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？(A† ⨂ B†)⦄ + ⦃∼？B†⦄ :=
         d.negativeOfCourse (tΓ.succ _) (by simp) |>.cast
-      have d : ⊢ᴸ Γ‡ + (Γ‡ + ⦃？(A† ⨂ B†)⦄) := dB.cut d
+      have d : ⊢ᴸᴸ¹ Γ‡ + (Γ‡ + ⦃？(A† ⨂ B†)⦄) := dB.cut d
       (d.cast.negativeContractMany (Δ := ⦃？(A† ⨂ B†)⦄) tΓ (by simp)).cast
-    let questTensorPlain (dA : ⊢ᴸ Γ‡ + ⦃？A†⦄) (dB : ⊢ᴸ Γ‡ + ⦃B†⦄) :
-        ⊢ᴸ Γ‡ + ⦃？(A† ⨂ ！B†)⦄ :=
-      have dB : ⊢ᴸ Γ‡ + ⦃！B†⦄ := dB.negativeOfCourse tΓ (by simp)
-      have d : ⊢ᴸ ⦃∼A†, ∼！B†, ？(A† ⨂ ！B†)⦄ :=
+    let questTensorPlain (dA : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†⦄) (dB : ⊢ᴸᴸ¹ Γ‡ + ⦃B†⦄) :
+        ⊢ᴸᴸ¹ Γ‡ + ⦃？(A† ⨂ ！B†)⦄ :=
+      have dB : ⊢ᴸᴸ¹ Γ‡ + ⦃！B†⦄ := dB.negativeOfCourse tΓ (by simp)
+      have d : ⊢ᴸᴸ¹ ⦃∼A†, ∼！B†, ？(A† ⨂ ！B†)⦄ :=
         (LinearLogic.Derivation.tensorAxiom A† (！B†)).dereliction
-      have d : ⊢ᴸ ⦃∼！B†, ？(A† ⨂ ！B†)⦄ + ⦃∼A†⦄ := d.cast
-      have d : ⊢ᴸ ⦃∼！B†, ？(A† ⨂ ！B†)⦄ + ⦃∼？A†⦄ := d.ofCourse (by simp)
-      have d : ⊢ᴸ Γ‡ + ⦃∼！B†, ？(A† ⨂ ！B†)⦄ := (dA.cut d).cast
-      have d : ⊢ᴸ Γ‡ + ⦃？(A† ⨂ ！B†)⦄ + ⦃∼！B†⦄ := d.cast
-      have d : ⊢ᴸ Γ‡ + (Γ‡ + ⦃？(A† ⨂ ！B†)⦄) := dB.cut d
+      have d : ⊢ᴸᴸ¹ ⦃∼！B†, ？(A† ⨂ ！B†)⦄ + ⦃∼A†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ ⦃∼！B†, ？(A† ⨂ ！B†)⦄ + ⦃∼？A†⦄ := d.ofCourse (by simp)
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃∼！B†, ？(A† ⨂ ！B†)⦄ := (dA.cut d).cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？(A† ⨂ ！B†)⦄ + ⦃∼！B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + (Γ‡ + ⦃？(A† ⨂ ！B†)⦄) := dB.cut d
       (d.cast.negativeContractMany (Δ := ⦃？(A† ⨂ ！B†)⦄) tΓ (by simp)).cast
-    let plainTensorQuest (dA : ⊢ᴸ Γ‡ + ⦃A†⦄) (dB : ⊢ᴸ Γ‡ + ⦃？B†⦄) :
-        ⊢ᴸ Γ‡ + ⦃？(！A† ⨂ B†)⦄ :=
-      have dA : ⊢ᴸ Γ‡ + ⦃！A†⦄ := dA.negativeOfCourse tΓ (by simp)
-      have d : ⊢ᴸ ⦃∼！A†, ∼B†, ？(！A† ⨂ B†)⦄ :=
+    let plainTensorQuest (dA : ⊢ᴸᴸ¹ Γ‡ + ⦃A†⦄) (dB : ⊢ᴸᴸ¹ Γ‡ + ⦃？B†⦄) :
+        ⊢ᴸᴸ¹ Γ‡ + ⦃？(！A† ⨂ B†)⦄ :=
+      have dA : ⊢ᴸᴸ¹ Γ‡ + ⦃！A†⦄ := dA.negativeOfCourse tΓ (by simp)
+      have d : ⊢ᴸᴸ¹ ⦃∼！A†, ∼B†, ？(！A† ⨂ B†)⦄ :=
         (LinearLogic.Derivation.tensorAxiom (！A†) B†).dereliction
-      have d : ⊢ᴸ ⦃∼！A†, ？(！A† ⨂ B†)⦄ + ⦃∼B†⦄ := d.cast
-      have d : ⊢ᴸ ⦃∼！A†, ？(！A† ⨂ B†)⦄ + ⦃∼？B†⦄ := d.ofCourse (by simp)
-      have d : ⊢ᴸ ⦃？(！A† ⨂ B†), ∼？B†⦄ + ⦃∼！A†⦄ := d.cast
-      have d : ⊢ᴸ Γ‡ + ⦃∼？B†, ？(！A† ⨂ B†)⦄ := (dA.cut d).cast
-      have d : ⊢ᴸ Γ‡ + ⦃？(！A† ⨂ B†)⦄ + ⦃∼？B†⦄ := d.cast
-      have d : ⊢ᴸ Γ‡ + (Γ‡ + ⦃？(！A† ⨂ B†)⦄) := dB.cut d
+      have d : ⊢ᴸᴸ¹ ⦃∼！A†, ？(！A† ⨂ B†)⦄ + ⦃∼B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ ⦃∼！A†, ？(！A† ⨂ B†)⦄ + ⦃∼？B†⦄ := d.ofCourse (by simp)
+      have d : ⊢ᴸᴸ¹ ⦃？(！A† ⨂ B†), ∼？B†⦄ + ⦃∼！A†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃∼？B†, ？(！A† ⨂ B†)⦄ := (dA.cut d).cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？(！A† ⨂ B†)⦄ + ⦃∼？B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + (Γ‡ + ⦃？(！A† ⨂ B†)⦄) := dB.cut d
       (d.cast.negativeContractMany (Δ := ⦃？(！A† ⨂ B†)⦄) tΓ (by simp)).cast
     match h₁ : A.polarity, h₂ : B.polarity with
     | true, true =>
-      have dA : ⊢ᴸ Γ‡ + ⦃？A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
-      have dB : ⊢ᴸ Γ‡ + ⦃？B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
+      have dA : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
+      have dB : ⊢ᴸᴸ¹ Γ‡ + ⦃？B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
       (questTensorQuest dA dB (Semiformula.girard_positive h₂)).cast
         (by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂])
     | true, false =>
-      have dA : ⊢ᴸ Γ‡ + ⦃？A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
-      have dB : ⊢ᴸ Γ‡ + ⦃B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
+      have dA : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
+      have dB : ⊢ᴸᴸ¹ Γ‡ + ⦃B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
       (questTensorPlain dA dB).cast (by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂])
     | false, true =>
-      have dA : ⊢ᴸ Γ‡ + ⦃A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
-      have dB : ⊢ᴸ Γ‡ + ⦃？B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
+      have dA : ⊢ᴸᴸ¹ Γ‡ + ⦃A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
+      have dB : ⊢ᴸᴸ¹ Γ‡ + ⦃？B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
       (plainTensorQuest dA dB).cast (by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂])
     | false, false =>
-      have dA : ⊢ᴸ Γ‡ + ⦃A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
-      have dB : ⊢ᴸ Γ‡ + ⦃B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
+      have dA : ⊢ᴸᴸ¹ Γ‡ + ⦃A†⦄ := d₁.toLL.cast (by simp [Semiformula.Girard, h₁])
+      have dB : ⊢ᴸᴸ¹ Γ‡ + ⦃B†⦄ := d₂.toLL.cast (by simp [Semiformula.Girard, h₂])
       (dA.with dB).cast <| by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂]
   | .or (Γ := Γ) (φ := A) (ψ := B) d =>
     match h₁ : A.polarity, h₂ : B.polarity with
     | true, true =>
-      have d : ⊢ᴸ Γ‡ + ⦃？A†, ？B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
-      have d : ⊢ᴸ Γ‡ + ⦃？A†⦄ + ⦃？B†⦄ := d.cast
-      have d : ⊢ᴸ Γ‡ + ⦃∼(！∼A† ⨂ ！∼B†)⦄ := d.par.cast (by simp)
-      have e : ⊢ᴸ ⦃！∼A† ⨂ ！∼B†, ？(A† ⨁ B†)⦄ := LinearLogic.Derivation.expComm _ _
-      have e : ⊢ᴸ ⦃？(A† ⨁ B†)⦄ + ⦃！∼A† ⨂ ！∼B†⦄ := e.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†, ？B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†⦄ + ⦃？B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃∼(！∼A† ⨂ ！∼B†)⦄ := d.par.cast (by simp)
+      have e : ⊢ᴸᴸ¹ ⦃！∼A† ⨂ ！∼B†, ？(A† ⨁ B†)⦄ := LinearLogic.Derivation.expComm _ _
+      have e : ⊢ᴸᴸ¹ ⦃？(A† ⨁ B†)⦄ + ⦃！∼A† ⨂ ！∼B†⦄ := e.cast
       e.cut d |>.cast (by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂, add_comm])
     | true, false =>
-      have d : ⊢ᴸ Γ‡ + ⦃？A†, B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
-      have d : ⊢ᴸ Γ‡ + ⦃？A†⦄ + ⦃B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†, B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃？A†⦄ + ⦃B†⦄ := d.cast
       d.par.cast <| by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂]
     | false, true =>
-      have d : ⊢ᴸ Γ‡ + ⦃A†, ？B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
-      have d : ⊢ᴸ Γ‡ + ⦃A†⦄ + ⦃？B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃A†, ？B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃A†⦄ + ⦃？B†⦄ := d.cast
       d.par.cast <| by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂]
     | false, false =>
-      have d : ⊢ᴸ Γ‡ + ⦃A†, B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
-      have d : ⊢ᴸ Γ‡ + ⦃A†⦄ + ⦃B†⦄ := d.cast
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃A†, B†⦄ := d.toLL.cast (by simp [Semiformula.Girard, h₁, h₂])
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃A†⦄ + ⦃B†⦄ := d.cast
       d.par.cast <| by simp [Semiformula.Girard, Semiformula.girard, h₁, h₂]
   | .all (φ := A) (Γ := Γ) d =>
     match h : A.polarity with
     |  true =>
-      have d : ⊢ᴸ (Γ‡)⁺ + ⦃(？A†).free⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
+      have d : ⊢ᴸᴸ¹ (Γ‡)⁺ + ⦃(？A†).free⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
       d.all.cast (by simp [Semiformula.Girard, Semiformula.girard, h])
     | false =>
-      have d : ⊢ᴸ (Γ‡)⁺ + ⦃A†.free⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
+      have d : ⊢ᴸᴸ¹ (Γ‡)⁺ + ⦃A†.free⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
       d.all.cast (by simp [Semiformula.Girard, Semiformula.girard, h])
   | .exs (Γ := Γ) (φ := A) (t := t) d =>
     let tΓ := d.traversal.remove.map Semiformula.Girard
     match h : A.polarity with
     |  true =>
-      have d : ⊢ᴸ Γ‡ + ⦃(？A†)/[t]⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
-      have e : ⊢ᴸ ⦃∼A†/[t]⦄ + ⦃A†/[t]⦄ :=
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃(？A†)/[t]⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
+      have e : ⊢ᴸᴸ¹ ⦃∼A†/[t]⦄ + ⦃A†/[t]⦄ :=
         (LinearLogic.Derivation.ax (A†/[t])).cast (by abel)
-      have e : ⊢ᴸ ⦃∼A†/[t]⦄ + ⦃∃¹ A†⦄ := e.exs
-      have e : ⊢ᴸ ⦃∼A†/[t]⦄ + ⦃？(∃¹ A†)⦄ := e.dereliction
-      have e : ⊢ᴸ ⦃？(∃¹ A†)⦄ + ⦃！(∼A†/[t])⦄ := e.cast |>.ofCourse (by simp)
-      have e : ⊢ᴸ ⦃∼(？A†)/[t], ？(∃¹ A†)⦄ := e.cast (by simp [add_comm])
-      have e : ⊢ᴸ ⦃？(∃¹ A†)⦄ + ⦃∼(？A†)/[t]⦄ := e.cast
+      have e : ⊢ᴸᴸ¹ ⦃∼A†/[t]⦄ + ⦃∃¹ A†⦄ := e.exs
+      have e : ⊢ᴸᴸ¹ ⦃∼A†/[t]⦄ + ⦃？(∃¹ A†)⦄ := e.dereliction
+      have e : ⊢ᴸᴸ¹ ⦃？(∃¹ A†)⦄ + ⦃！(∼A†/[t])⦄ := e.cast |>.ofCourse (by simp)
+      have e : ⊢ᴸᴸ¹ ⦃∼(？A†)/[t], ？(∃¹ A†)⦄ := e.cast (by simp [add_comm])
+      have e : ⊢ᴸᴸ¹ ⦃？(∃¹ A†)⦄ + ⦃∼(？A†)/[t]⦄ := e.cast
       (d.cut e).cast (by simp [Semiformula.Girard, Semiformula.girard, h])
     | false =>
-      have d : ⊢ᴸ Γ‡ + ⦃A†/[t]⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
-      have d : ⊢ᴸ Γ‡ + ⦃(！A†)/[t]⦄ := d.negativeOfCourse tΓ (by simp)
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃A†/[t]⦄ := d.toLL.cast (by simp [Semiformula.Girard, h])
+      have d : ⊢ᴸᴸ¹ Γ‡ + ⦃(！A†)/[t]⦄ := d.negativeOfCourse tΓ (by simp)
       d.exs.dereliction.cast (by simp [Semiformula.Girard, Semiformula.girard, h])
 
 end Derivation
