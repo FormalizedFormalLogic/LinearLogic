@@ -85,19 +85,19 @@ notation "𝐋𝐋¹" => LL.ll
 
 instance : Entailment (LL L) (Proposition L) := ⟨fun _ ↦ Proposition.Proof⟩
 
-scoped prefix:45 "⊢ᴸ " => Derivation
+prefix:45 "⊢ᴸᴸ¹ " => Derivation
 
 namespace Derivation
 
 variable {Γ Δ : Sequent L}
 
-def cast (d : ⊢ᴸ Γ) (e : Γ = Δ := by abel) : ⊢ᴸ Δ := e ▸ d
+def cast (d : ⊢ᴸᴸ¹ Γ) (e : Γ = Δ := by abel) : ⊢ᴸᴸ¹ Δ := e ▸ d
 
-def rotate (d : ⊢ᴸ ⦃A⦄ + Γ) : ⊢ᴸ Γ + ⦃A⦄ := d.cast
+def rotate (d : ⊢ᴸᴸ¹ ⦃A⦄ + Γ) : ⊢ᴸᴸ¹ Γ + ⦃A⦄ := d.cast
 
-def invRotate (d : ⊢ᴸ Γ + ⦃A⦄) : ⊢ᴸ ⦃A⦄ + Γ := d.cast
+def invRotate (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄) : ⊢ᴸᴸ¹ ⦃A⦄ + Γ := d.cast
 
-def height {Γ : Sequent L} : ⊢ᴸ Γ → ℕ
+def height {Γ : Sequent L} : ⊢ᴸᴸ¹ Γ → ℕ
   |          ax _ => 0
   |     cut d₁ d₂ => max d₁.height d₂.height + 1
   |           one => 0
@@ -120,66 +120,66 @@ section height
 @[simp] lemma height_id (A : Proposition L) :
     (ax A).height = 0 := rfl
 
-@[simp] lemma height_cut (d₁ : ⊢ᴸ Γ + ⦃A⦄) (d₂ : ⊢ᴸ Δ + ⦃∼A⦄) :
+@[simp] lemma height_cut (d₁ : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (d₂ : ⊢ᴸᴸ¹ Δ + ⦃∼A⦄) :
     (d₁.cut d₂).height = max d₁.height d₂.height + 1 := rfl
 
 @[simp] lemma height_one :
     (one (L := L)).height = 0 := rfl
 
-@[simp] lemma height_falsum (d : ⊢ᴸ Γ) :
+@[simp] lemma height_falsum (d : ⊢ᴸᴸ¹ Γ) :
     d.falsum.height = d.height + 1 := rfl
 
-@[simp] lemma height_tensor (d₁ : ⊢ᴸ Γ + ⦃A⦄) (d₂ : ⊢ᴸ Δ + ⦃B⦄) :
+@[simp] lemma height_tensor (d₁ : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (d₂ : ⊢ᴸᴸ¹ Δ + ⦃B⦄) :
     (d₁.tensor d₂).height = max d₁.height d₂.height + 1 := rfl
 
-@[simp] lemma height_par (d : ⊢ᴸ Γ + ⦃A⦄ + ⦃B⦄) :
+@[simp] lemma height_par (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄ + ⦃B⦄) :
     d.par.height = d.height + 1 := rfl
 
 @[simp] lemma height_verum (Γ : Sequent L) :
     (verum Γ).height = 0 := rfl
 
-@[simp] lemma height_with (d₁ : ⊢ᴸ Γ + ⦃A⦄) (d₂ : ⊢ᴸ Γ + ⦃B⦄) :
+@[simp] lemma height_with (d₁ : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (d₂ : ⊢ᴸᴸ¹ Γ + ⦃B⦄) :
     (d₁.with d₂).height = max d₁.height d₂.height + 1 := rfl
 
-@[simp] lemma height_plusLeft (d : ⊢ᴸ Γ + ⦃B⦄) (A : Proposition L) :
+@[simp] lemma height_plusLeft (d : ⊢ᴸᴸ¹ Γ + ⦃B⦄) (A : Proposition L) :
     (d.plusLeft A).height = d.height + 1 := rfl
 
-@[simp] lemma height_plusRight (d : ⊢ᴸ Γ + ⦃A⦄) (B : Proposition L) :
+@[simp] lemma height_plusRight (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (B : Proposition L) :
     (d.plusRight B).height = d.height + 1 := rfl
 
-@[simp] lemma height_ofCourse (d : ⊢ᴸ Γ + ⦃A⦄) (hΓ : Sequent.IsQuest Γ) :
+@[simp] lemma height_ofCourse (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (hΓ : Sequent.IsQuest Γ) :
     (d.ofCourse hΓ).height = d.height + 1 := rfl
 
-@[simp] lemma height_weakening (d : ⊢ᴸ Γ) (A) :
+@[simp] lemma height_weakening (d : ⊢ᴸᴸ¹ Γ) (A) :
     (d.weakening A).height = d.height + 1 := rfl
 
-@[simp] lemma height_dereliction (d : ⊢ᴸ Γ + ⦃A⦄) :
+@[simp] lemma height_dereliction (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄) :
     d.dereliction.height = d.height + 1 := rfl
 
-@[simp] lemma height_contraction (d : ⊢ᴸ Γ + ⦃？A⦄ + ⦃？A⦄) :
+@[simp] lemma height_contraction (d : ⊢ᴸᴸ¹ Γ + ⦃？A⦄ + ⦃？A⦄) :
     d.contraction.height = d.height + 1 := rfl
 
-@[simp] lemma height_all {A : Semiproposition L 1} (d : ⊢ᴸ Γ⁺ + ⦃A.free⦄) :
+@[simp] lemma height_all {A : Semiproposition L 1} (d : ⊢ᴸᴸ¹ Γ⁺ + ⦃A.free⦄) :
     d.all.height = d.height + 1 := rfl
 
-@[simp] lemma height_exs {A : Semiproposition L 1} {t} (d : ⊢ᴸ Γ + ⦃A/[t]⦄) :
+@[simp] lemma height_exs {A : Semiproposition L 1} {t} (d : ⊢ᴸᴸ¹ Γ + ⦃A/[t]⦄) :
     (d.exs t).height = d.height + 1 := rfl
 
-@[simp] lemma height_cast (d : ⊢ᴸ Γ) (e : Γ = Δ) :
+@[simp] lemma height_cast (d : ⊢ᴸᴸ¹ Γ) (e : Γ = Δ) :
     (d.cast e).height = d.height := by rcases e; rfl
 
 end height
 
-def eta : (A : Proposition L) → ⊢ᴸ ⦃A, ∼A⦄
+def eta : (A : Proposition L) → ⊢ᴸᴸ¹ ⦃A, ∼A⦄
   | .rel _ _ => ax _
   | .nrel _ _ => ax _
   | 1 => one.falsum
   | ⊥ => one.falsum.cast (by simp [add_comm])
   | A ⨂ B =>
-    have d : ⊢ᴸ ⦃A ⨂ B, ∼A, ∼B⦄ := ((eta A).rotate.tensor (eta B).rotate).cast
+    have d : ⊢ᴸᴸ¹ ⦃A ⨂ B, ∼A, ∼B⦄ := ((eta A).rotate.tensor (eta B).rotate).cast
     d.par
   | A ⅋ B =>
-    have d : ⊢ᴸ ⦃∼A ⨂ ∼B, A, B⦄ := ((eta A).tensor (eta B)).cast
+    have d : ⊢ᴸᴸ¹ ⦃∼A ⨂ ∼B, A, B⦄ := ((eta A).tensor (eta B)).cast
     d.par.cast (by simp [add_comm])
   | ⊤ => (verum ⦃0⦄).cast (by simp [add_comm])
   | 0 => verum ⦃0⦄
@@ -190,133 +190,133 @@ def eta : (A : Proposition L) → ⊢ᴸ ⦃A, ∼A⦄
   | ！A => (eta A).dereliction.rotate.ofCourse (by simp) |>.cast (by simp [add_comm])
   | ？A => (eta A).rotate.dereliction.rotate.ofCourse (by simp)
   | ∀¹ A =>
-    have d : ⊢ᴸ ⦃A.free⦄ + ⦃(∼A.shift)/[&0]⦄ := (eta A.free).cast (by simp)
-    have d : ⊢ᴸ ⦃∃¹ ∼A⦄⁺ + ⦃A.free⦄ := (d.exs &0).cast (by simp [add_comm])
+    have d : ⊢ᴸᴸ¹ ⦃A.free⦄ + ⦃(∼A.shift)/[&0]⦄ := (eta A.free).cast (by simp)
+    have d : ⊢ᴸᴸ¹ ⦃∃¹ ∼A⦄⁺ + ⦃A.free⦄ := (d.exs &0).cast (by simp [add_comm])
     d.all.cast (by simp [add_comm])
   | ∃¹ A =>
-    have d : ⊢ᴸ ⦃∼A.free⦄ + ⦃A.shift/[&0]⦄ := (eta A.free).cast (by simp [add_comm])
-    have d : ⊢ᴸ ⦃∃¹ A⦄⁺ + ⦃(∼A).free⦄ := (d.exs &0).cast (by
+    have d : ⊢ᴸᴸ¹ ⦃∼A.free⦄ + ⦃A.shift/[&0]⦄ := (eta A.free).cast (by simp [add_comm])
+    have d : ⊢ᴸᴸ¹ ⦃∃¹ A⦄⁺ + ⦃(∼A).free⦄ := (d.exs &0).cast (by
       simpa using (add_comm ⦃∼A.free⦄ ⦃∃¹ A.shift⦄))
     d.all
   termination_by A => A.complexity
 
-def tensorAxiom (A B : Proposition L) : ⊢ᴸ ⦃∼A, ∼B, A ⨂ B⦄ :=
-  have dA : ⊢ᴸ ⦃∼A⦄ + ⦃A⦄ := (ax A).cast
-  have dB : ⊢ᴸ ⦃∼B⦄ + ⦃B⦄ := (ax B).cast
+def tensorAxiom (A B : Proposition L) : ⊢ᴸᴸ¹ ⦃∼A, ∼B, A ⨂ B⦄ :=
+  have dA : ⊢ᴸᴸ¹ ⦃∼A⦄ + ⦃A⦄ := (ax A).cast
+  have dB : ⊢ᴸᴸ¹ ⦃∼B⦄ + ⦃B⦄ := (ax B).cast
   (dA.tensor dB).cast
 
-def expComm (A B : Proposition L) : ⊢ᴸ ⦃！∼A ⨂ ！∼B, ？(A ⨁ B)⦄ :=
-  have dA : ⊢ᴸ ⦃？(A ⨁ B)⦄ + ⦃！∼A⦄ :=
+def expComm (A B : Proposition L) : ⊢ᴸᴸ¹ ⦃！∼A ⨂ ！∼B, ？(A ⨁ B)⦄ :=
+  have dA : ⊢ᴸᴸ¹ ⦃？(A ⨁ B)⦄ + ⦃！∼A⦄ :=
     ((ax A).cast.plusRight B).dereliction.rotate.ofCourse (by simp)
-  have dB : ⊢ᴸ ⦃？(A ⨁ B)⦄ + ⦃！∼B⦄ :=
+  have dB : ⊢ᴸᴸ¹ ⦃？(A ⨁ B)⦄ + ⦃！∼B⦄ :=
     ((ax B).cast.plusLeft A).dereliction.rotate.ofCourse (by simp)
-  have d : ⊢ᴸ ⦃！∼A ⨂ ！∼B⦄ + ⦃？(A ⨁ B)⦄ + ⦃？(A ⨁ B)⦄ :=
+  have d : ⊢ᴸᴸ¹ ⦃！∼A ⨂ ！∼B⦄ + ⦃？(A ⨁ B)⦄ + ⦃？(A ⨁ B)⦄ :=
     (dA.tensor dB).cast
   d.contraction.cast
 
-def ofNegative : (ν : Proposition L) → ν.Negative → ⊢ᴸ ⦃∼？ν, ν⦄
+def ofNegative : (ν : Proposition L) → ν.Negative → ⊢ᴸᴸ¹ ⦃∼？ν, ν⦄
   |    ？A, _ => (ax (？A)).ofCourse (by simp) |>.cast
   |     ⊥, _ =>
-    have d : ⊢ᴸ ⦃！1⦄ := ((one (L := L)).cast : ⊢ᴸ ⦃⦄ + ⦃1⦄).ofCourse (by simp) |>.cast
+    have d : ⊢ᴸᴸ¹ ⦃！1⦄ := ((one (L := L)).cast : ⊢ᴸᴸ¹ ⦃⦄ + ⦃1⦄).ofCourse (by simp) |>.cast
     d.falsum
   |     ⊤, _ => verum ⦃！0⦄
   | ν ⅋ μ, h =>
     have ihν := ofNegative ν (by rcases h; assumption)
     have ihμ := ofNegative μ (by rcases h; assumption)
-    have aν : ⊢ᴸ ⦃∼ν⦄ + ⦃ν⦄ := (ax ν).cast
-    have aμ : ⊢ᴸ ⦃∼μ⦄ + ⦃μ⦄ := (ax μ).cast
-    have dν : ⊢ᴸ ⦃？ν⦄ + ⦃∼ν⦄ := aν.dereliction.cast
-    have dμ : ⊢ᴸ ⦃？μ⦄ + ⦃∼μ⦄ := aμ.dereliction.cast
-    have d : ⊢ᴸ ⦃？ν, ？μ⦄ + ⦃！(∼ν ⨂ ∼μ)⦄ :=
+    have aν : ⊢ᴸᴸ¹ ⦃∼ν⦄ + ⦃ν⦄ := (ax ν).cast
+    have aμ : ⊢ᴸᴸ¹ ⦃∼μ⦄ + ⦃μ⦄ := (ax μ).cast
+    have dν : ⊢ᴸᴸ¹ ⦃？ν⦄ + ⦃∼ν⦄ := aν.dereliction.cast
+    have dμ : ⊢ᴸᴸ¹ ⦃？μ⦄ + ⦃∼μ⦄ := aμ.dereliction.cast
+    have d : ⊢ᴸᴸ¹ ⦃？ν, ？μ⦄ + ⦃！(∼ν ⨂ ∼μ)⦄ :=
       (dν.tensor dμ).ofCourse (by simp)
-    have d : ⊢ᴸ ⦃！(∼ν ⨂ ∼μ), ？μ, ν⦄ :=
-      ((d.cast : ⊢ᴸ ⦃！(∼ν ⨂ ∼μ), ？μ⦄ + ⦃？ν⦄).cut
-        (ihν.cast : ⊢ᴸ ⦃ν⦄ + ⦃∼？ν⦄)).cast
-    have d : ⊢ᴸ ⦃！(∼ν ⨂ ∼μ), ν, μ⦄ :=
-      ((d.cast : ⊢ᴸ ⦃！(∼ν ⨂ ∼μ), ν⦄ + ⦃？μ⦄).cut
-        (ihμ.cast : ⊢ᴸ ⦃μ⦄ + ⦃∼？μ⦄)).cast
+    have d : ⊢ᴸᴸ¹ ⦃！(∼ν ⨂ ∼μ), ？μ, ν⦄ :=
+      ((d.cast : ⊢ᴸᴸ¹ ⦃！(∼ν ⨂ ∼μ), ？μ⦄ + ⦃？ν⦄).cut
+        (ihν.cast : ⊢ᴸᴸ¹ ⦃ν⦄ + ⦃∼？ν⦄)).cast
+    have d : ⊢ᴸᴸ¹ ⦃！(∼ν ⨂ ∼μ), ν, μ⦄ :=
+      ((d.cast : ⊢ᴸᴸ¹ ⦃！(∼ν ⨂ ∼μ), ν⦄ + ⦃？μ⦄).cut
+        (ihμ.cast : ⊢ᴸᴸ¹ ⦃μ⦄ + ⦃∼？μ⦄)).cast
     d.par.cast (by simp)
   | ν ＆ μ, h =>
     have ihν := ofNegative ν (by rcases h; assumption)
     have ihμ := ofNegative μ (by rcases h; assumption)
-    have eν : ⊢ᴸ ⦃？ν⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
-      ((ax ν).plusRight (∼μ) |>.cast : ⊢ᴸ ⦃∼ν ⨁ ∼μ⦄ + ⦃ν⦄)
+    have eν : ⊢ᴸᴸ¹ ⦃？ν⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
+      ((ax ν).plusRight (∼μ) |>.cast : ⊢ᴸᴸ¹ ⦃∼ν ⨁ ∼μ⦄ + ⦃ν⦄)
         |>.dereliction.rotate.ofCourse (by simp)
-    have dν : ⊢ᴸ ⦃ν⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
-      ((eν.cast : ⊢ᴸ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃？ν⦄).cut
-        (ihν.cast : ⊢ᴸ ⦃ν⦄ + ⦃∼？ν⦄)).cast
-    have eμ : ⊢ᴸ ⦃？μ⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
-      ((ax μ).plusLeft (∼ν) |>.cast : ⊢ᴸ ⦃∼ν ⨁ ∼μ⦄ + ⦃μ⦄)
+    have dν : ⊢ᴸᴸ¹ ⦃ν⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
+      ((eν.cast : ⊢ᴸᴸ¹ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃？ν⦄).cut
+        (ihν.cast : ⊢ᴸᴸ¹ ⦃ν⦄ + ⦃∼？ν⦄)).cast
+    have eμ : ⊢ᴸᴸ¹ ⦃？μ⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
+      ((ax μ).plusLeft (∼ν) |>.cast : ⊢ᴸᴸ¹ ⦃∼ν ⨁ ∼μ⦄ + ⦃μ⦄)
         |>.dereliction.rotate.ofCourse (by simp)
-    have dμ : ⊢ᴸ ⦃μ⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
-      ((eμ.cast : ⊢ᴸ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃？μ⦄).cut
-        (ihμ.cast : ⊢ᴸ ⦃μ⦄ + ⦃∼？μ⦄)).cast
-    have dν : ⊢ᴸ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃ν⦄ := dν.cast
-    have dμ : ⊢ᴸ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃μ⦄ := dμ.cast
+    have dμ : ⊢ᴸᴸ¹ ⦃μ⦄ + ⦃！(∼ν ⨁ ∼μ)⦄ :=
+      ((eμ.cast : ⊢ᴸᴸ¹ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃？μ⦄).cut
+        (ihμ.cast : ⊢ᴸᴸ¹ ⦃μ⦄ + ⦃∼？μ⦄)).cast
+    have dν : ⊢ᴸᴸ¹ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃ν⦄ := dν.cast
+    have dμ : ⊢ᴸᴸ¹ ⦃！(∼ν ⨁ ∼μ)⦄ + ⦃μ⦄ := dμ.cast
     (dν.with dμ).cast (by simp)
   |   ∀¹ ν, h =>
     have ih := ofNegative ν.free (by rcases h; simpa)
-    have a : ⊢ᴸ ⦃∼ν.free⦄ + ⦃ν.free⦄ := (ax ν.free).cast
-    have e : ⊢ᴸ ⦃？ν.free⦄ + ⦃∃¹ ∼ν.shift⦄ :=
+    have a : ⊢ᴸᴸ¹ ⦃∼ν.free⦄ + ⦃ν.free⦄ := (ax ν.free).cast
+    have e : ⊢ᴸᴸ¹ ⦃？ν.free⦄ + ⦃∃¹ ∼ν.shift⦄ :=
       (a.dereliction.cast (by simp; abel) :
-        ⊢ᴸ ⦃？ν.free⦄ + ⦃(∼ν.shift)/[&0]⦄).exs &0
-    have d : ⊢ᴸ ⦃？ν.free⦄ + ⦃！(∃¹ ∼ν.shift)⦄ :=
+        ⊢ᴸᴸ¹ ⦃？ν.free⦄ + ⦃(∼ν.shift)/[&0]⦄).exs &0
+    have d : ⊢ᴸᴸ¹ ⦃？ν.free⦄ + ⦃！(∃¹ ∼ν.shift)⦄ :=
       e.ofCourse (by simp)
-    have d : ⊢ᴸ ⦃ν.free⦄ + ⦃！(∃¹ ∼ν.shift)⦄ :=
-      ((d.cast : ⊢ᴸ ⦃！(∃¹ ∼ν.shift)⦄ + ⦃？ν.free⦄).cut
-        (ih.cast : ⊢ᴸ ⦃ν.free⦄ + ⦃∼？ν.free⦄)).cast
-    ((d.cast (by simp [add_comm]) : ⊢ᴸ ⦃∼？(∀¹ ν)⦄⁺ + ⦃ν.free⦄).all).cast
+    have d : ⊢ᴸᴸ¹ ⦃ν.free⦄ + ⦃！(∃¹ ∼ν.shift)⦄ :=
+      ((d.cast : ⊢ᴸᴸ¹ ⦃！(∃¹ ∼ν.shift)⦄ + ⦃？ν.free⦄).cut
+        (ih.cast : ⊢ᴸᴸ¹ ⦃ν.free⦄ + ⦃∼？ν.free⦄)).cast
+    ((d.cast (by simp [add_comm]) : ⊢ᴸᴸ¹ ⦃∼？(∀¹ ν)⦄⁺ + ⦃ν.free⦄).all).cast
   termination_by ν => ν.complexity
 
-def removeQuest (h : ν.Negative) (d : ⊢ᴸ Γ + ⦃？ν⦄) : ⊢ᴸ Γ + ⦃ν⦄ :=
+def removeQuest (h : ν.Negative) (d : ⊢ᴸᴸ¹ Γ + ⦃？ν⦄) : ⊢ᴸᴸ¹ Γ + ⦃ν⦄ :=
   d.cut (ofNegative ν h).cast
 
-def negativeWeakening {ν : Proposition L} (h : ν.Negative) (d : ⊢ᴸ Γ) :
-    ⊢ᴸ Γ + ⦃ν⦄ := (d.weakening ν).removeQuest h
+def negativeWeakening {ν : Proposition L} (h : ν.Negative) (d : ⊢ᴸᴸ¹ Γ) :
+    ⊢ᴸᴸ¹ Γ + ⦃ν⦄ := (d.weakening ν).removeQuest h
 
 def negativeContraction {ν : Proposition L} (h : ν.Negative)
-    (d : ⊢ᴸ Γ + ⦃ν⦄ + ⦃ν⦄) : ⊢ᴸ Γ + ⦃ν⦄ :=
-  have d : ⊢ᴸ Γ + ⦃？ν⦄ + ⦃？ν⦄ := (d.dereliction.cast : ⊢ᴸ Γ + ⦃？ν⦄ + ⦃ν⦄).dereliction
+    (d : ⊢ᴸᴸ¹ Γ + ⦃ν⦄ + ⦃ν⦄) : ⊢ᴸᴸ¹ Γ + ⦃ν⦄ :=
+  have d : ⊢ᴸᴸ¹ Γ + ⦃？ν⦄ + ⦃？ν⦄ := (d.dereliction.cast : ⊢ᴸᴸ¹ Γ + ⦃？ν⦄ + ⦃ν⦄).dereliction
   d.contraction.removeQuest h
 
 /-- Contract a duplicated negative context in the supplied traversal order. -/
-def negativeContractMany {Γ Δ : Sequent L} (d : ⊢ᴸ Δ + Γ + Γ)
-    (t : Γ.Traversal) (h : Γ.Negative) : ⊢ᴸ Δ + Γ :=
+def negativeContractMany {Γ Δ : Sequent L} (d : ⊢ᴸᴸ¹ Δ + Γ + Γ)
+    (t : Γ.Traversal) (h : Γ.Negative) : ⊢ᴸᴸ¹ Δ + Γ :=
   match t with
   | .zero => d.cast
   | .succ (s := Γ) A t =>
     have h : Sequent.Negative Γ ∧ A.Negative := by simpa using h
-    have d : ⊢ᴸ (Δ + ⦃A⦄ + ⦃A⦄) + Γ + Γ := d.cast
-    have d : ⊢ᴸ (Δ + Γ) + ⦃A⦄ + ⦃A⦄ := (d.negativeContractMany t h.1).cast
+    have d : ⊢ᴸᴸ¹ (Δ + ⦃A⦄ + ⦃A⦄) + Γ + Γ := d.cast
+    have d : ⊢ᴸᴸ¹ (Δ + Γ) + ⦃A⦄ + ⦃A⦄ := (d.negativeContractMany t h.1).cast
     (d.negativeContraction h.2).cast
 
-def addQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ + Δ) (t : Δ.Traversal) : ⊢ᴸ Γ + ？Δ :=
+def addQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸᴸ¹ Γ + Δ) (t : Δ.Traversal) : ⊢ᴸᴸ¹ Γ + ？Δ :=
   match t with
   | .zero => d.cast (by simp)
   | .succ (s := Δ) A t =>
-    have d : ⊢ᴸ (Γ + ⦃A⦄) + Δ := d.cast
+    have d : ⊢ᴸᴸ¹ (Γ + ⦃A⦄) + Δ := d.cast
     have d := d.addQuestAppendRight t
-    (d.cast : ⊢ᴸ Γ + ？Δ + ⦃A⦄).dereliction.cast (by simp [add_assoc])
+    (d.cast : ⊢ᴸᴸ¹ Γ + ？Δ + ⦃A⦄).dereliction.cast (by simp [add_assoc])
 
-def addQuestTail (d : ⊢ᴸ Γ + ⦃A⦄) (t : Γ.Traversal) : ⊢ᴸ ？Γ + ⦃A⦄ :=
-  ((d.cast : ⊢ᴸ ⦃A⦄ + Γ).addQuestAppendRight t).cast
+def addQuestTail (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (t : Γ.Traversal) : ⊢ᴸᴸ¹ ？Γ + ⦃A⦄ :=
+  ((d.cast : ⊢ᴸᴸ¹ ⦃A⦄ + Γ).addQuestAppendRight t).cast
 
-def removeQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ + ？Δ) (t : Δ.Traversal)
-    (h : Δ.Negative) : ⊢ᴸ Γ + Δ :=
+def removeQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸᴸ¹ Γ + ？Δ) (t : Δ.Traversal)
+    (h : Δ.Negative) : ⊢ᴸᴸ¹ Γ + Δ :=
   match t with
   | .zero => d.cast (by simp)
   | .succ (s := Δ) A t =>
     have h' : Sequent.Negative Δ ∧ A.Negative := by simpa using h
-    have d : ⊢ᴸ (Γ + ⦃？A⦄) + ？Δ := d.cast (by simp [add_assoc, add_comm])
+    have d : ⊢ᴸᴸ¹ (Γ + ⦃？A⦄) + ？Δ := d.cast (by simp [add_assoc, add_comm])
     have d := d.removeQuestAppendRight t h'.1
-    (d.cast : ⊢ᴸ Γ + Δ + ⦃？A⦄).removeQuest h'.2 |>.cast
+    (d.cast : ⊢ᴸᴸ¹ Γ + Δ + ⦃？A⦄).removeQuest h'.2 |>.cast
 
-def removeQuestTail (d : ⊢ᴸ ？Γ + ⦃A⦄) (t : Γ.Traversal)
-    (h : Γ.Negative) : ⊢ᴸ Γ + ⦃A⦄ :=
-  ((d.cast : ⊢ᴸ ⦃A⦄ + ？Γ).removeQuestAppendRight t h).cast
+def removeQuestTail (d : ⊢ᴸᴸ¹ ？Γ + ⦃A⦄) (t : Γ.Traversal)
+    (h : Γ.Negative) : ⊢ᴸᴸ¹ Γ + ⦃A⦄ :=
+  ((d.cast : ⊢ᴸᴸ¹ ⦃A⦄ + ？Γ).removeQuestAppendRight t h).cast
 
-def negativeOfCourse (d : ⊢ᴸ Γ + ⦃A⦄) (t : Γ.Traversal)
-    (h : Γ.Negative) : ⊢ᴸ Γ + ⦃！A⦄ :=
+def negativeOfCourse (d : ⊢ᴸᴸ¹ Γ + ⦃A⦄) (t : Γ.Traversal)
+    (h : Γ.Negative) : ⊢ᴸᴸ¹ Γ + ⦃！A⦄ :=
   (d.addQuestTail t).ofCourse (by simp) |>.removeQuestTail t h
 end Derivation
 
