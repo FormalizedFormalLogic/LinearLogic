@@ -1,7 +1,7 @@
 module
 
 public import LinearLogic.LL.FirstOrder.Rew
-public import Mathlib.Data.Multiset.Basic
+public import LinearLogic.Vorspiel.Multiset
 
 /-! # One-sided sequent calculus for first-order linear logic -/
 
@@ -24,10 +24,7 @@ namespace IsQuest
 @[simp] lemma zero : Sequent.IsQuest (0 : Sequent L) := by simp [Sequent.IsQuest]
 
 @[simp] lemma add (Γ Δ : Sequent L) :
-    Sequent.IsQuest (Γ + Δ) ↔ Γ.IsQuest ∧ Δ.IsQuest := by
-  change (∀ A, A ∈ Γ + Δ → A.IsQuest) ↔
-    (∀ A, A ∈ Γ → A.IsQuest) ∧ ∀ A, A ∈ Δ → A.IsQuest
-  grind
+    Sequent.IsQuest (Γ + Δ) ↔ Γ.IsQuest ∧ Δ.IsQuest := Multiset.forall_mem_add
 
 @[simp] lemma singleton (A : Proposition L) : Sequent.IsQuest ⦃A⦄ ↔ A.IsQuest := by
   simp [Sequent.IsQuest]
@@ -39,10 +36,7 @@ namespace Negative
 @[simp] lemma zero : Sequent.Negative (0 : Sequent L) := by simp [Sequent.Negative]
 
 @[simp] lemma add (Γ Δ : Sequent L) :
-    Sequent.Negative (Γ + Δ) ↔ Γ.Negative ∧ Δ.Negative := by
-  change (∀ A, A ∈ Γ + Δ → A.Negative) ↔
-    (∀ A, A ∈ Γ → A.Negative) ∧ ∀ A, A ∈ Δ → A.Negative
-  grind
+    Sequent.Negative (Γ + Δ) ↔ Γ.Negative ∧ Δ.Negative := Multiset.forall_mem_add
 
 @[simp] lemma singleton (A : Proposition L) : Sequent.Negative ⦃A⦄ ↔ A.Negative := by
   simp [Sequent.Negative]
@@ -103,8 +97,6 @@ def rotate (d : ⊢ᴸ ⦃A⦄ + Γ) : ⊢ᴸ Γ + ⦃A⦄ := d.cast
 
 def invRotate (d : ⊢ᴸ Γ + ⦃A⦄) : ⊢ᴸ ⦃A⦄ + Γ := d.cast
 
-def swap (d : ⊢ᴸ ⦃A⦄ + ⦃B⦄) : ⊢ᴸ ⦃B⦄ + ⦃A⦄ := d.cast
-
 def height {Γ : Sequent L} : ⊢ᴸ Γ → ℕ
   |          ax _ => 0
   |     cut d₁ d₂ => max d₁.height d₂.height + 1
@@ -149,11 +141,11 @@ section height
 @[simp] lemma height_with (d₁ : ⊢ᴸ Γ + ⦃A⦄) (d₂ : ⊢ᴸ Γ + ⦃B⦄) :
     (d₁.with d₂).height = max d₁.height d₂.height + 1 := rfl
 
-@[simp] lemma height_plusLeft (d : ⊢ᴸ Γ + ⦃B⦄) (_A : Proposition L) :
-    (d.plusLeft B).height = d.height + 1 := rfl
+@[simp] lemma height_plusLeft (d : ⊢ᴸ Γ + ⦃B⦄) (A : Proposition L) :
+    (d.plusLeft A).height = d.height + 1 := rfl
 
-@[simp] lemma height_plusRight (d : ⊢ᴸ Γ + ⦃A⦄) (_B : Proposition L) :
-    (d.plusRight A).height = d.height + 1 := rfl
+@[simp] lemma height_plusRight (d : ⊢ᴸ Γ + ⦃A⦄) (B : Proposition L) :
+    (d.plusRight B).height = d.height + 1 := rfl
 
 @[simp] lemma height_ofCourse (d : ⊢ᴸ Γ + ⦃A⦄) (hΓ : Sequent.IsQuest Γ) :
     (d.ofCourse hΓ).height = d.height + 1 := rfl
@@ -178,7 +170,35 @@ section height
 
 end height
 
-def eta (A : Proposition L) : ⊢ᴸ ⦃A, ∼A⦄ := ax A
+def eta : (A : Proposition L) → ⊢ᴸ ⦃A, ∼A⦄
+  | .rel _ _ => ax _
+  | .nrel _ _ => ax _
+  | 1 => one.falsum
+  | ⊥ => one.falsum.cast (by simp [add_comm])
+  | A ⨂ B =>
+    have d : ⊢ᴸ ⦃A ⨂ B, ∼A, ∼B⦄ := ((eta A).rotate.tensor (eta B).rotate).cast
+    d.par
+  | A ⅋ B =>
+    have d : ⊢ᴸ ⦃∼A ⨂ ∼B, A, B⦄ := ((eta A).tensor (eta B)).cast
+    d.par.cast (by simp [add_comm])
+  | ⊤ => (verum ⦃0⦄).cast (by simp [add_comm])
+  | 0 => verum ⦃0⦄
+  | A ＆ B =>
+    ((eta A).plusRight (∼B)).rotate.with ((eta B).plusLeft (∼A)).rotate |>.cast (by simp [add_comm])
+  | A ⨁ B =>
+    (((eta A).rotate.plusRight B).rotate.with ((eta B).rotate.plusLeft A).rotate)
+  | ！A => (eta A).dereliction.rotate.ofCourse (by simp) |>.cast (by simp [add_comm])
+  | ？A => (eta A).rotate.dereliction.rotate.ofCourse (by simp)
+  | ∀¹ A =>
+    have d : ⊢ᴸ ⦃A.free⦄ + ⦃(∼A.shift)/[&0]⦄ := (eta A.free).cast (by simp)
+    have d : ⊢ᴸ ⦃∃¹ ∼A⦄⁺ + ⦃A.free⦄ := (d.exs &0).cast (by simp [add_comm])
+    d.all.cast (by simp [add_comm])
+  | ∃¹ A =>
+    have d : ⊢ᴸ ⦃∼A.free⦄ + ⦃A.shift/[&0]⦄ := (eta A.free).cast (by simp [add_comm])
+    have d : ⊢ᴸ ⦃∃¹ A⦄⁺ + ⦃(∼A).free⦄ := (d.exs &0).cast (by
+      simpa using (add_comm ⦃∼A.free⦄ ⦃∃¹ A.shift⦄))
+    d.all
+  termination_by A => A.complexity
 
 def tensorAxiom (A B : Proposition L) : ⊢ᴸ ⦃∼A, ∼B, A ⨂ B⦄ :=
   have dA : ⊢ᴸ ⦃∼A⦄ + ⦃A⦄ := (ax A).cast
@@ -259,106 +279,45 @@ def negativeContraction {ν : Proposition L} (h : ν.Negative)
   have d : ⊢ᴸ Γ + ⦃？ν⦄ + ⦃？ν⦄ := (d.dereliction.cast : ⊢ᴸ Γ + ⦃？ν⦄ + ⦃ν⦄).dereliction
   d.contraction.removeQuest h
 
-noncomputable def negativeWk [L.DecidableEq]
-    (d : ⊢ᴸ Γ) (ss : Γ ⊆ Δ) (hΔ : Δ.Negative) : ⊢ᴸ Δ :=
-  let rec add (l : List (Proposition L))
-      (hl : ∀ A ∈ l, A.Negative) : ⊢ᴸ Γ + (l : Multiset (Proposition L)) :=
-    match l with
-    | [] => d.cast
-    | A :: l =>
-      (add l (by simp_all)).negativeWeakening (hl A (by simp)) |>.cast (by
-        rw [show (↑(A :: l) : Multiset (Proposition L)) =
-            A ::ₘ (l : Multiset (Proposition L)) from rfl,
-          ← Multiset.singleton_add, Multiset.atom_eq_singleton];
-        abel)
-  let rec remove (l : List (Proposition L))
-      (d : ⊢ᴸ (l : Multiset (Proposition L)) + Δ)
-      (hl : ∀ A ∈ l, A ∈ Δ) : ⊢ᴸ Δ :=
-    match l with
-    | [] => d.cast (by simp)
-    | A :: l =>
-      have hA : A ∈ Δ := hl A (by simp)
-      have he : Δ = {A} + Δ.erase A :=
-        ((Multiset.singleton_add A (Δ.erase A)).trans (Multiset.cons_erase hA)).symm
-      have d : ⊢ᴸ ((l : Multiset (Proposition L)) + Δ.erase A) + ⦃A⦄ + ⦃A⦄ := d.cast (by
-        calc
-          (↑(A :: l) : Multiset (Proposition L)) + Δ = ↑(A :: l) + ({A} + Δ.erase A) :=
-            congrArg ((↑(A :: l) : Multiset (Proposition L)) + ·) he
-          _ = ((l : Multiset (Proposition L)) + Δ.erase A) + ⦃A⦄ + ⦃A⦄ := by
-            rw [show (↑(A :: l) : Multiset (Proposition L)) =
-                A ::ₘ (l : Multiset (Proposition L)) from rfl,
-              ← Multiset.singleton_add, Multiset.atom_eq_singleton];
-            abel)
-      have d := d.negativeContraction (hΔ A hA)
-      remove l (d.cast (by
-        calc
-          ((l : Multiset (Proposition L)) + Δ.erase A) + ⦃A⦄ =
-              (l : Multiset (Proposition L)) + ({A} + Δ.erase A) := by
-            rw [Multiset.atom_eq_singleton];
-            abel
-          _ = (l : Multiset (Proposition L)) + Δ :=
-            congrArg ((l : Multiset (Proposition L)) + ·) he.symm))
-        (by intro B hB; exact hl B (by simp [hB]))
-  remove Γ.toList (add Δ.toList (by
-      intro A hA;
-      exact hΔ A (by simpa using hA)) |>.cast (by
-      rw [Multiset.coe_toList, Multiset.coe_toList]))
-    (by intro A hA; exact ss (by simpa using hA))
+/-- Contract a duplicated negative context in the supplied traversal order. -/
+def negativeContractMany {Γ Δ : Sequent L} (d : ⊢ᴸ Δ + Γ + Γ)
+    (t : Γ.Traversal) (h : Γ.Negative) : ⊢ᴸ Δ + Γ :=
+  match t with
+  | .zero => d.cast
+  | .succ (s := Γ) A t =>
+    have h : Sequent.Negative Γ ∧ A.Negative := by simpa using h
+    have d : ⊢ᴸ (Δ + ⦃A⦄ + ⦃A⦄) + Γ + Γ := d.cast
+    have d : ⊢ᴸ (Δ + Γ) + ⦃A⦄ + ⦃A⦄ := (d.negativeContractMany t h.1).cast
+    (d.negativeContraction h.2).cast
 
-noncomputable def addQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ + Δ) : ⊢ᴸ Γ + ？Δ :=
-  let rec go {Γ : Sequent L} (l : List (Proposition L))
-      (d : ⊢ᴸ Γ + (l : Multiset (Proposition L))) :
-      ⊢ᴸ Γ + ？(l : Multiset (Proposition L)) :=
-    match l with
-    | [] => d.cast (by simp)
-    | A :: l =>
-      have d : ⊢ᴸ (Γ + ⦃A⦄) + (l : Multiset (Proposition L)) := d.cast
-      have d : ⊢ᴸ Γ + ？(l : Multiset (Proposition L)) + ⦃A⦄ := (go l d).cast
-      d.dereliction.cast (by
-        suffices Γ + ？(l : Multiset (Proposition L)) + ⦃？A⦄ =
-            Γ + (⦃？A⦄ + ？(l : Multiset (Proposition L))) by
-          simpa [ExponentialConnective.multisetQuest_def,
-            Multiset.atom_eq_singleton] using this
-        abel)
-  have d : ⊢ᴸ Γ + ？(Δ.toList : Multiset (Proposition L)) :=
-    go Δ.toList (d.cast (by simp))
-  d.cast (by simp)
+def addQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ + Δ) (t : Δ.Traversal) : ⊢ᴸ Γ + ？Δ :=
+  match t with
+  | .zero => d.cast (by simp)
+  | .succ (s := Δ) A t =>
+    have d : ⊢ᴸ (Γ + ⦃A⦄) + Δ := d.cast
+    have d := d.addQuestAppendRight t
+    (d.cast : ⊢ᴸ Γ + ？Δ + ⦃A⦄).dereliction.cast (by simp [add_assoc])
 
-noncomputable def addQuestTail {Γ : Sequent L} (d : ⊢ᴸ Γ + ⦃A⦄) : ⊢ᴸ ？Γ + ⦃A⦄ :=
-  ((d.cast : ⊢ᴸ ⦃A⦄ + Γ).addQuestAppendRight).cast
+def addQuestTail (d : ⊢ᴸ Γ + ⦃A⦄) (t : Γ.Traversal) : ⊢ᴸ ？Γ + ⦃A⦄ :=
+  ((d.cast : ⊢ᴸ ⦃A⦄ + Γ).addQuestAppendRight t).cast
 
-noncomputable def removeQuestAppendRight {Γ Δ : Sequent L}
-    (d : ⊢ᴸ Γ + ？Δ) (h : Δ.Negative) : ⊢ᴸ Γ + Δ :=
-  let rec go {Γ : Sequent L} (l : List (Proposition L))
-      (d : ⊢ᴸ Γ + ？(l : Multiset (Proposition L)))
-      (hl : ∀ A ∈ l, A.Negative) : ⊢ᴸ Γ + (l : Multiset (Proposition L)) :=
-    match l with
-    | [] => d.cast (by simp)
-    | A :: l =>
-      have hA : A.Negative := hl A (by simp)
-      have hl : ∀ B ∈ l, B.Negative := by grind
-      have d : ⊢ᴸ (Γ + ⦃A⦄) + ？(l : Multiset (Proposition L)) :=
-        (d.cast (by
-          suffices Γ + (⦃？A⦄ + ？(l : Multiset (Proposition L))) =
-              Γ + ？(l : Multiset (Proposition L)) + ⦃？A⦄ by
-            simpa [ExponentialConnective.multisetQuest_def,
-              Multiset.atom_eq_singleton] using this
-          abel) : ⊢ᴸ Γ + ？(l : Multiset (Proposition L)) + ⦃？A⦄).removeQuest hA |>.cast
-      (go l d hl).cast
-  have d : ⊢ᴸ Γ + (Δ.toList : Multiset (Proposition L)) :=
-    go Δ.toList (d.cast (by simp)) (by
-      intro A hA;
-      exact h A (by simpa using hA))
-  d.cast (by simp)
+def removeQuestAppendRight {Γ Δ : Sequent L} (d : ⊢ᴸ Γ + ？Δ) (t : Δ.Traversal)
+    (h : Δ.Negative) : ⊢ᴸ Γ + Δ :=
+  match t with
+  | .zero => d.cast (by simp)
+  | .succ (s := Δ) A t =>
+    have h' : Sequent.Negative Δ ∧ A.Negative := by simpa using h
+    have d : ⊢ᴸ (Γ + ⦃？A⦄) + ？Δ := d.cast (by simp [add_assoc, add_comm])
+    have d := d.removeQuestAppendRight t h'.1
+    (d.cast : ⊢ᴸ Γ + Δ + ⦃？A⦄).removeQuest h'.2 |>.cast
 
-noncomputable def removeQuestTail {Γ : Sequent L}
-    (d : ⊢ᴸ ？Γ + ⦃A⦄) (h : Γ.Negative) : ⊢ᴸ Γ + ⦃A⦄ :=
-  ((d.cast : ⊢ᴸ ⦃A⦄ + ？Γ).removeQuestAppendRight h).cast
+def removeQuestTail (d : ⊢ᴸ ？Γ + ⦃A⦄) (t : Γ.Traversal)
+    (h : Γ.Negative) : ⊢ᴸ Γ + ⦃A⦄ :=
+  ((d.cast : ⊢ᴸ ⦃A⦄ + ？Γ).removeQuestAppendRight t h).cast
 
-noncomputable def negativeOfCourse {Γ : Sequent L}
-    (d : ⊢ᴸ Γ + ⦃A⦄) (h : Γ.Negative) : ⊢ᴸ Γ + ⦃！A⦄ :=
-  d.addQuestTail.ofCourse (by simp) |>.removeQuestTail h
-
+def negativeOfCourse (d : ⊢ᴸ Γ + ⦃A⦄) (t : Γ.Traversal)
+    (h : Γ.Negative) : ⊢ᴸ Γ + ⦃！A⦄ :=
+  (d.addQuestTail t).ofCourse (by simp) |>.removeQuestTail t h
 end Derivation
 
 end FFL.FirstOrder.LinearLogic

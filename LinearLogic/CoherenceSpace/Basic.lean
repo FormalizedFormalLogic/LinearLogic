@@ -366,7 +366,7 @@ end ArrowPar
 
 abbrev Lolli (α β : Type*) : Type _ := Par αᗮ β
 
-namespace FFLlli
+namespace Lolli
 
 variable {α β : Type*} [CoherenceSpace α] [CoherenceSpace β]
 
@@ -378,7 +378,7 @@ protected def id : Point (Lolli α α) := ⟨{.mk (.mk a) a | a}, by
   rcases this
   simp [Par.mk_coherence_mk_iff]; grind⟩
 
-end FFLlli
+end Lolli
 
 /-! #### &: Additive conjunction -/
 
