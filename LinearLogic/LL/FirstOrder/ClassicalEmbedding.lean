@@ -1,7 +1,8 @@
 module
 
 public import Foundation.Logic.Embedding
-public import Foundation.FirstOrder.Polarity
+public import Foundation.FirstOrder.Syntax.Classical.Polarity
+public import Foundation.FirstOrder.LK.Basic
 public import LinearLogic.LL.FirstOrder.Calculus
 
 /-! # Girard's embedding of classical logic into linear logic -/
@@ -71,7 +72,7 @@ def forget : Semiformula L ξ n → FirstOrder.Semiformula L ξ n
 
 end Semiformula
 
-abbrev Sequent.forget (Γ : Sequent L) : FirstOrder.Sequent L :=
+abbrev Sequent.forget (Γ : Sequent L) : FirstOrder.LK.Sequent L :=
   Γ.map Semiformula.forget
 
 namespace Sequent
@@ -85,7 +86,7 @@ namespace Derivation
 
 def forget [L.DecidableEq] {Γ : Sequent L} :
     ⊢ᴸᴸ¹ Γ → Γ.Traversal → ⊢ᴸᴷ¹ Γ.forget
-  | ax A, _ => (FirstOrder.Derivation.eta A.forget).cast (by simp [Sequent.forget])
+  | ax A, _ => (FirstOrder.LK.Derivation.eta A.forget).cast (by simp [Sequent.forget])
   | cut (A := A) (Γ := Γ) (Δ := Δ) d₁ d₂, t =>
     let tΓ := t.restrict (Multiset.le_add_right Γ Δ)
     let tΔ := t.restrict (Multiset.le_add_left Δ Γ)
@@ -107,11 +108,11 @@ def forget [L.DecidableEq] {Γ : Sequent L} :
       (d₁.forget (tΓ.succ A)).cast (by simp [Sequent.forget])
     have dB : ⊢ᴸᴷ¹ Sequent.forget Δ + ⦃B.forget⦄ :=
       (d₂.forget (tΔ.succ B)).cast (by simp [Sequent.forget])
-    (FirstOrder.Derivation.tensor (tΓ.map Semiformula.forget)
+    (FirstOrder.LK.Derivation.tensor (tΓ.map Semiformula.forget)
       (tΔ.map Semiformula.forget) dA dB).cast (by simp [Sequent.forget, add_assoc])
   | verum Γ, t =>
     (Structural.weakenMany (t.remove.map Semiformula.forget)
-      FirstOrder.Derivation.verum).cast (by simp [Sequent.forget, add_comm])
+      FirstOrder.LK.Derivation.verum).cast (by simp [Sequent.forget, add_comm])
   | .with (Γ := Γ) (A := A) (B := B) d₁ d₂, t =>
     have dA : ⊢ᴸᴷ¹ Sequent.forget Γ + ⦃A.forget⦄ :=
       (d₁.forget (t.remove.succ A)).cast (by simp [Sequent.forget])
@@ -152,7 +153,7 @@ end Derivation
 namespace Proof
 
 theorem forget [L.DecidableEq] {A : Proposition L} : 𝐋𝐋¹ ⊢ A → 𝐋𝐊¹ ⊢ A.forget := fun h ↦
-  ⟨by simpa using! Derivation.forget h.get (.atom A)⟩
+  ⟨by simpa using! Derivation.forget (Classical.choice h) (.atom A)⟩
 
 end Proof
 
@@ -359,20 +360,22 @@ lemma girard_positive {A : Semiformula L ξ n} (h : A.Positive) : A.girard.Posit
 
 end Semiformula
 
-abbrev Sequent.Girard (Γ : Sequent L) : LinearLogic.Sequent L :=
+abbrev LK.Sequent.Girard (Γ : LK.Sequent L) : LinearLogic.Sequent L :=
   Γ.map Semiformula.Girard
 
-namespace Sequent
+namespace LK.Sequent
 
-@[simp] lemma girard_negative (Γ : Sequent L) : Γ.Girard.Negative := by
-  simp [Sequent.Girard, LinearLogic.Sequent.Negative]
+@[simp] lemma girard_negative (Γ : LK.Sequent L) : Γ.Girard.Negative := by
+  simp [LK.Sequent.Girard, LinearLogic.Sequent.Negative]
 
-@[simp] lemma shifts_Girard (Γ : Sequent L) : (Γ.Girard)⁺ = Girard (Γ⁺ : Sequent L) := by
-  simp [Sequent.Girard, Rewriting.shifts]
+@[simp] lemma shifts_Girard (Γ : LK.Sequent L) : (Γ.Girard)⁺ = Girard (Γ⁺ : LK.Sequent L) := by
+  simp [LK.Sequent.Girard, Rewriting.shifts]
 
 end Sequent
 
-namespace Derivation
+end LK
+
+namespace LK.Derivation
 
 open LinearLogic
 
@@ -382,7 +385,7 @@ local postfix:max "†" => Semiformula.girard
 local postfix:max "‡" => Semiformula.Girard
 local postfix:max "‡" => Sequent.Girard
 
-def toLL {Γ : Sequent L} : ⊢ᴸᴷ¹ Γ → ⊢ᴸᴸ¹ Γ‡
+def toLL {Γ : LK.Sequent L} : ⊢ᴸᴷ¹ Γ → ⊢ᴸᴸ¹ Γ‡
   | .identity R v =>
     have d : ⊢ᴸᴸ¹ ⦃？.nrel R v⦄ + ⦃！.rel R v⦄ :=
       (LinearLogic.Derivation.ax (！.rel R v)).cast (by abel)
@@ -511,14 +514,14 @@ def toLL {Γ : Sequent L} : ⊢ᴸᴷ¹ Γ → ⊢ᴸᴸ¹ Γ‡
       have d : ⊢ᴸᴸ¹ Γ‡ + ⦃(！A†)/[t]⦄ := d.negativeOfCourse tΓ (by simp)
       d.exs.dereliction.cast (by simp [Semiformula.Girard, Semiformula.girard, h])
 
-end Derivation
+end LK.Derivation
 
-namespace Proof
+namespace LK.Proof
 
 variable [L.DecidableEq]
 
 theorem girard {A : Proposition L} : 𝐋𝐊¹ ⊢ A → 𝐋𝐋¹ ⊢ A.Girard := fun h ↦
-  ⟨by simpa using! Derivation.toLL h.get⟩
+  ⟨by simpa using! LK.Derivation.toLL (Classical.choice h)⟩
 
 theorem girard_faithful {A : Proposition L} : 𝐋𝐋¹ ⊢ A.Girard ↔ 𝐋𝐊¹ ⊢ A :=
   ⟨fun h ↦ by simpa using LinearLogic.Proof.forget h, girard⟩
@@ -526,6 +529,6 @@ theorem girard_faithful {A : Proposition L} : 𝐋𝐋¹ ⊢ A.Girard ↔ 𝐋�
 instance : Entailment.FaithfullyEmbeddable (𝐋𝐊¹ : LK L) (𝐋𝐋¹ : LinearLogic.LL L) where
   prop := ⟨Semiformula.Girard, fun _ ↦ girard_faithful⟩
 
-end Proof
+end LK.Proof
 
 end FFL.FirstOrder

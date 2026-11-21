@@ -41,7 +41,7 @@ inductive Derivation : Sequent → Type _
 
 abbrev Proof (A : Formula) : Type _ := Derivation ⦃A⦄
 
-instance : Entailment ELL Formula := ⟨fun _ ↦ Proof⟩
+instance : Entailment ELL Formula := ⟨fun _ A ↦ Nonempty (Proof A)⟩
 
 scoped prefix:45 "⊢! " => Derivation
 
@@ -77,16 +77,17 @@ namespace Proof
 
 open Derivation
 
-def ax' : 𝐄𝐋𝐋⁰ ⊢! A ⊸ A :=
+theorem ax' : 𝐄𝐋𝐋⁰ ⊢ A ⊸ A :=
   have d : ⊢! ⦃⦄ + ⦃∼A⦄ + ⦃A⦄ := (eta A).swap.cast
-  d.par |>.cast (by simp [Formula.lolli_def])
+  ⟨d.par |>.cast (by simp [Formula.lolli_def])⟩
 
-def modusPonens (d₁ : 𝐄𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐄𝐋𝐋⁰ ⊢! A) : 𝐄𝐋𝐋⁰ ⊢! B :=
+theorem modusPonens (d₁ : 𝐄𝐋𝐋⁰ ⊢ A ⊸ B) (d₂ : 𝐄𝐋𝐋⁰ ⊢ A) : 𝐄𝐋𝐋⁰ ⊢ B :=
+  let d₁ := Classical.choice d₁
   have d₁ : ⊢! ⦃⦄ + ⦃∼(A ⨂ ∼B)⦄ := d₁.cast (by simp [Formula.lolli_def])
   have b : ⊢! ⦃∼A, B, A ⨂ ∼B⦄ := (eta A).swap.tensor (eta B)
   have c : ⊢! ⦃∼A, B⦄ := (cut b d₁).cast
-  have d₂ : ⊢! ⦃⦄ + ⦃A⦄ := d₂.cast
-  (cut d₂ c.swap).cast
+  have d₂ : ⊢! ⦃⦄ + ⦃A⦄ := (Classical.choice d₂).cast
+  ⟨(cut d₂ c.swap).cast⟩
 
 end Proof
 

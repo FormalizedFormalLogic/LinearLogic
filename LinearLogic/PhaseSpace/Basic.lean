@@ -96,7 +96,7 @@ instance : SetLike (Fact M) M where
   coe_injective a b h := by
     cases a; cases b; congr
 
-instance : LE (Fact M) := LE.ofSetLike (Fact M) M
+instance : LE (Fact M) := LE.ofMembership (Fact M)
 
 @[simp] lemma isFact (A : Fact M) : IsFact (A : Set M) := A.isFact'
 

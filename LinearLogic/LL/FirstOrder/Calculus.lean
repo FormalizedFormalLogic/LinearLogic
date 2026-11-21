@@ -83,7 +83,7 @@ inductive LL (L : Language) where
 
 notation "𝐋𝐋¹" => LL.ll
 
-instance : Entailment (LL L) (Proposition L) := ⟨fun _ ↦ Proposition.Proof⟩
+instance : Entailment (LL L) (Proposition L) := ⟨fun _ A ↦ Nonempty (Proposition.Proof A)⟩
 
 prefix:45 "⊢ᴸᴸ¹ " => Derivation
 

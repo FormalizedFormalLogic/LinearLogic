@@ -102,9 +102,10 @@ inductive Symbol where
 
 notation "𝐌𝐋𝐋⁰" => Symbol.mll
 
-instance : Entailment Symbol Formula := ⟨fun _ ↦ Proof⟩
+instance : Entailment Symbol Formula := ⟨fun _ A ↦ Nonempty (Proof A)⟩
 
 scoped prefix:45 "⊢! " => Derivation
+open scoped FFL.Propositional.MultiplicativeLinearLogic
 
 abbrev Derivable (Γ : Sequent) : Prop := Nonempty (Derivation Γ)
 
@@ -134,16 +135,17 @@ namespace Proof
 
 open Derivation
 
-def eta' : 𝐌𝐋𝐋⁰ ⊢! A ⊸ A :=
+theorem eta' : 𝐌𝐋𝐋⁰ ⊢ A ⊸ A :=
   have d : ⊢! ⦃⦄ + ⦃∼A⦄ + ⦃A⦄ := (eta A).swap.cast
-  d.par |>.cast (by simp [Formula.lolli_def])
+  ⟨d.par |>.cast (by simp [Formula.lolli_def])⟩
 
-def modusPonens (d₁ : 𝐌𝐋𝐋⁰ ⊢! A ⊸ B) (d₂ : 𝐌𝐋𝐋⁰ ⊢! A) : 𝐌𝐋𝐋⁰ ⊢! B :=
+theorem modusPonens (d₁ : 𝐌𝐋𝐋⁰ ⊢ A ⊸ B) (d₂ : 𝐌𝐋𝐋⁰ ⊢ A) : 𝐌𝐋𝐋⁰ ⊢ B :=
+  let d₁ := Classical.choice d₁
   have d₁ : ⊢! ⦃⦄ + ⦃∼(A ⨂ ∼B)⦄ := d₁.cast (by simp [Formula.lolli_def])
   have b : ⊢! ⦃∼A, B, A ⨂ ∼B⦄ := (eta A).swap.tensor (eta B)
   have c : ⊢! ⦃∼A, B⦄ := (cut b d₁).cast
-  have d₂ : ⊢! ⦃⦄ + ⦃A⦄ := d₂.cast
-  (cut d₂ c.swap).cast
+  have d₂ : ⊢! ⦃⦄ + ⦃A⦄ := (Classical.choice d₂).cast
+  ⟨(cut d₂ c.swap).cast⟩
 
 end Proof
 
