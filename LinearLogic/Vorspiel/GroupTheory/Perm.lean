@@ -380,17 +380,17 @@ theorem partition_parts_card_eq_fintype_card (σ : Perm γ) :
               unfold toPart at hqr
               by_cases hx : x ∈ σ.support
               · by_cases hy : y ∈ σ.support
-                · rw [dif_pos hx, dif_pos hy] at hqr
+                · rw [dite_eq_left hx, dite_eq_left hy] at hqr
                   have hcycle :
                       σ.cycleOf x = σ.cycleOf y :=
                     congrArg Subtype.val (Sum.inl.inj hqr)
                   exact (sameCycle_iff_cycleOf_eq_of_mem_support hx hy).mpr hcycle
-                · rw [dif_pos hx, dif_neg hy] at hqr
+                · rw [dite_eq_left hx, dite_eq_right hy] at hqr
                   cases hqr
               · by_cases hy : y ∈ σ.support
-                · rw [dif_neg hx, dif_pos hy] at hqr
+                · rw [dite_eq_right hx, dite_eq_left hy] at hqr
                   cases hqr
-                · rw [dif_neg hx, dif_neg hy] at hqr
+                · rw [dite_eq_right hx, dite_eq_right hy] at hqr
                   exact (congrArg Subtype.val (Sum.inr.inj hqr)).sameCycle σ
     · intro s
       rcases s with c | x
@@ -400,13 +400,13 @@ theorem partition_parts_card_eq_fintype_card (σ : Perm γ) :
         change toPart y = Sum.inl c
         have hσy : y ∈ σ.support := mem_cycleFactorsFinset_support_le c.2 hy
         unfold toPart
-        rw [dif_pos hσy]
+        rw [dite_eq_left hσy]
         exact congrArg Sum.inl (Subtype.ext ((cycle_is_cycleOf hy c.2).symm))
       · refine ⟨⟦(x : γ)⟧, ?_⟩
         change toPart (x : γ) = Sum.inr x
         have hx : ¬(x : γ) ∈ σ.support := by simpa [mem_support] using x.2
         unfold toPart
-        rw [dif_neg hx]
+        rw [dite_eq_right hx]
   rw [partition_parts_card_eq_cycleFactorsFinset_card_add_fixed σ]
   calc
     σ.cycleFactorsFinset.card + Fintype.card {x : γ // σ x = x}
